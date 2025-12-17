@@ -8,13 +8,13 @@ const useStore = create((set, get) => ({
     minZoom: 1,
     maxZoom: 7,
 
-    center: [28.50, -1.00],
+    center: [29.00, -1.00],
     setCenter: (center) => set({ center }),
-
-    bounds: [
-        [-31.0, -41.5], // southwest
-        [74.0, 45.0] // northeast
-    ],
+    
+    // https://docs.mapbox.com/mapbox-gl-js/example/fitbounds/
+    // [west, south, east, north]
+    // bounds: [-31.0, -41.5, 74.0, 45.0],
+    bounds: [-50.0, -41.5, 95.0, 45.0],
 
     variableArray: ['percent', 'precip'],
     variable: 'percent',
@@ -28,12 +28,6 @@ const useStore = create((set, get) => ({
         const {variable, confidence} = get()
         return `${variable}_${confidence}`
     },
-
-    opacity: 1,
-    setOpacity: (opacity) => set({ opacity }),
-
-    display: true,
-    setDisplay: (display) => set({ display }),
 
     // time: '2024-09-01',
     // setTime: (time) => set({time}),
@@ -54,15 +48,31 @@ const useStore = create((set, get) => ({
     month: 1,
     setMonth: (month) => set({ month }),
 
-    defaultColormaps: { percent: 'warm', precip: 'cool' },
-    colormapName: () => {
-        const {defaultColormaps, variable} = get()
-        return defaultColormaps[variable]
+    gintoUri: null,
+    setGintoUri: (gintoUri) => set({ gintoUri }),
+
+    gemeliUri: null,
+    setGemeliUri: (gemeliUri) => set({ gemeliUri }),
+
+    // this is the 'icefire' palette from seaborn, but reversed
+    icefire: ['#ffd4ac', '#f18f51', '#d34936', '#932e44', '#4a252e', '#1f1e1e', '#302e4a', '#4a4fa5', '#3885d0', '#75b8ce', '#bde7db'],
+    // this is the RdBu colormap from Matplotlib, but with the central color changed to a different white and the two darkest colors clipped on each end
+    redblue: ['#a51429', '#c94741', '#e58368', '#f7b799', '#fcdfcf', '#f6f7f7', '#d7e8f1', '#a7d0e4', '#68abd0', '#3783bb', '#1c5c9f'],
+    // this is the 'warm' colormap from carbonplan, reversed
+    warm: ['#FFFFFF', '#FFF3BE', '#FFE3A1', '#FFD391', '#FFC187', '#FEAF83', '#F59F8F', '#E8919C', '#D884A9', '#C379B6', '#A771C5'],
+    // this is the 'cool' colormap from carbonplan, reversed
+    cool: ['#FFFFFF', '#F1F7BC', '#D6EFAF', '#B7E6B3', '#A5D8C0', '#A1C8CB', '#9EB8D1', '#9EA7D3', '#9F96D2', '#A384CD', '#A771C5'],
+    colormap: () => {
+        const {variable, redblue, cool} = get()
+        return variable == 'percent' ? redblue : cool
     },
+
+    thresholds: [],
+    setThresholds: (thresholds) => set({ thresholds }),
 
     climRanges: { 
         percent: { min: 0.0, max: 100.0 },
-        precip: { min: 0.0, max: 260.0 },
+        precip: { min: 0.0, max: 300.0 },
     },
     clim: () => {
         const {climRanges, variable} = get()
@@ -72,11 +82,11 @@ const useStore = create((set, get) => ({
     showCharts: false,
     setShowCharts: (showCharts) => set({ showCharts }),
 
+    filterCoordinates: [],
+    setFilterCoordinates: (filterCoordinates) => set({ filterCoordinates }),
+
     plotData: {},
     setPlotData: (plotData) => set({ plotData }),
-
-    showOceanMask: true,
-    setShowOceanMask: (showOceanMask) => set({ showOceanMask }),
 
     showLandOutline: true,
     setShowLandOutline: (showLandOutline) => set({ showLandOutline }),
@@ -93,11 +103,17 @@ const useStore = create((set, get) => ({
     sliding: false,
     setSliding: (sliding) => set({ sliding }),
 
+    variableIdx: 0,
+    setVariableIdx: (variableIdx) => set({ variableIdx }),
+
+    confidenceIdx: 2,
+    setConfidenceIdx: (confidenceIdx) => set({ confidenceIdx }),
+
+    showSettings: false,
+    setShowSettings: (showSettings) => set({ showSettings }),
+
     showAbout: false,
     setShowAbout: (showAbout) => set({ showAbout }),
-
-    showAboutMobile: false,
-    setShowAboutMobile: (showAboutMobile) => set({ showAboutMobile }),
 
     showMenu: false,
     setShowMenu: (showMenu) => set({ showMenu }),
@@ -131,7 +147,6 @@ const useStore = create((set, get) => ({
     setConfTags: (confTags) => set({ confTags }),
     confTagLabels: {5: '5%', 20: '20%', 50: '50%', 80: '80%', 95: '95%'},
 
-    defaultColors: { percent: 'blue', precip: 'red' },
     defaultLabels: { percent: 'Percentile', precip: 'Precipitation' },
     defaultUnits: { percent: '%', precip: 'mm' },
 

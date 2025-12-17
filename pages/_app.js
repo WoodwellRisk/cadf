@@ -7,10 +7,11 @@ import theme from '@carbonplan/theme'
 
 const App = ({ Component, pageProps }) => {
   theme.fonts = {
-    body: "ginto-normal",
-    faux: "ginto-normal",
-    heading: "ginto-normal",
-    mono: "ginto-normal",
+    body: 'ginto-normal',
+    faux: 'ginto-normal',
+    heading: 'ginto-normal',
+    mono: 'ginto-normal',
+    numbers: 'gemeli-normal',
   }
 
   return (

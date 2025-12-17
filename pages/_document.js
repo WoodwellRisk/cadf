@@ -5,8 +5,7 @@ export default class MyDocument extends Document {
   render() {
     return (
       <Html lang='en' className='no-focus-outline'>
-        <Head>
-        </Head>
+        <Head></Head>
         <body>
           <InitializeColorMode />
           <Main />

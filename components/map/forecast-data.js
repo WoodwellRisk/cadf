@@ -1,35 +1,9 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { useMapbox } from '@carbonplan/maps'
-import { useThemedColormap } from '@carbonplan/colormaps'
 import { v4 as uuidv4 } from 'uuid'
 
+import { arrayRange, updatePaintProperty } from './utils'
 import useStore from '../store/index'
-
-const updatePaintProperty = (map, ref, key, value) => {
-    const { current: id } = ref
-    if (map.getLayer(id)) {
-        map.setPaintProperty(id, key, value)
-    }
-}
-
-// https://www.delftstack.com/howto/javascript/rgb-to-hex-javascript/
-function rgbArrayToHex(rgbArray) {
-    return rgbArray.map(rgb => {
-        const [r, g, b] = rgb;
-        return '#' + ((1 << 24) + (r << 16) + (g << 8) + b)
-            .toString(16)
-            .slice(1)
-            .toUpperCase();
-    });
-}
-
-// https://www.freecodecamp.org/news/javascript-range-create-an-array-of-numbers-with-the-from-method/
-const arrayRange = (start, stop, step) =>
-    Array.from(
-        { length: (stop - start) / step + 1 },
-        (value, index) => start + index * step
-    )
-
 
 const ForecastData = ({ id, source, band, time, borderColor, minZoom = null, maxZoom = null }) => {
 
@@ -40,31 +14,25 @@ const ForecastData = ({ id, source, band, time, borderColor, minZoom = null, max
     const layerIdRef = useRef()
 
     const clim = useStore((state) => state.clim)()
-    const colormapName = useStore((state) => state.colormapName)()
-    const colormap = useThemedColormap(colormapName, { count: 10 })
-    const colors = rgbArrayToHex(colormap)
+    const setThresholds = useStore((state) => state.setThresholds)
+    const colormap = useStore((state) => state.colormap)()
     const borderWidth = 0.5
     const zoom = useStore((state) => state.zoom)
     const zoomChange = 4.5
-    const dates = useStore((state) => state.dates)
     const setPlotData = useStore((state) => state.setPlotData)
-
-    const [filterCoordinates, setFilterCoordinates] = useState([])
+    const filterCoordinates = useStore((state) => state.filterCoordinates)
+    const setFilterCoordinates = useStore((state) => state.setFilterCoordinates)
 
     const min = clim[0]
     const max = clim[1]
     const range = max - min;
-    const nBins = 10
+    const nBins = 11
     const binWidth = range / nBins;
-    const bins = arrayRange(min + binWidth, max, binWidth)
-
-    useEffect(() => {
-        console.log(map.getZoom())
-    }, [map.getZoom()])
+    let thresholds = arrayRange(min + binWidth, max + binWidth, binWidth)
+    setThresholds(thresholds)
 
     useEffect(() => {
         if (filterCoordinates.length != 0) {
-            console.log(filterCoordinates)
 
             let features = map.querySourceFeatures('forecast', {
                 sourceLayer: 'drought',
@@ -92,30 +60,27 @@ const ForecastData = ({ id, source, band, time, borderColor, minZoom = null, max
                 'precip_95': [],
             }
 
-            features.forEach((feature) => {              
+            features.forEach((feature) => {
                 plotData['time'].push(feature.properties['time']),
-                
-                plotData['percent_5'].push(feature.properties['percent_5']),
-                plotData['percent_20'].push(feature.properties['percent_20']),
-                plotData['percent_50'].push(feature.properties['percent_50']),
-                plotData['percent_80'].push(feature.properties['percent_80']),
-                plotData['percent_95'].push(feature.properties['percent_95']),
-                
-                plotData['precip_5'].push(feature.properties['precip_5']),
-                plotData['precip_20'].push(feature.properties['precip_20']),
-                plotData['precip_50'].push(feature.properties['precip_50']),
-                plotData['precip_80'].push(feature.properties['precip_80']),
-                plotData['precip_95'].push(feature.properties['precip_95'])
+
+                    plotData['percent_5'].push(feature.properties['percent_5']),
+                    plotData['percent_20'].push(feature.properties['percent_20']),
+                    plotData['percent_50'].push(feature.properties['percent_50']),
+                    plotData['percent_80'].push(feature.properties['percent_80']),
+                    plotData['percent_95'].push(feature.properties['percent_95']),
+
+                    plotData['precip_5'].push(feature.properties['precip_5']),
+                    plotData['precip_20'].push(feature.properties['precip_20']),
+                    plotData['precip_50'].push(feature.properties['precip_50']),
+                    plotData['precip_80'].push(feature.properties['precip_80']),
+                    plotData['precip_95'].push(feature.properties['precip_95'])
             })
 
             // sometimes the features are repeated at the boundaries of tiles, so we need to only keep the first 6 of each
             // https://github.com/mapbox/mapbox-gl-js/issues/3147
             Object.keys(plotData).forEach((key, index) => {
-                plotData[key] =  plotData[key].slice(0, 6)
+                plotData[key] = plotData[key].slice(0, 6)
             });
-
-            // console.log(plotData)
-            // console.log()
 
             setPlotData(plotData)
         }
@@ -163,16 +128,17 @@ const ForecastData = ({ id, source, band, time, borderColor, minZoom = null, max
                 paint: {
                     'circle-color': [
                         'case',
-                        ['<', ['get', band], bins[0]], colors[0],
-                        ['all', ['>=', ['get', band], bins[0]], ['<', ['get', band], bins[1]]], colors[1],
-                        ['all', ['>=', ['get', band], bins[1]], ['<', ['get', band], bins[2]]], colors[2],
-                        ['all', ['>=', ['get', band], bins[2]], ['<', ['get', band], bins[3]]], colors[3],
-                        ['all', ['>=', ['get', band], bins[3]], ['<', ['get', band], bins[4]]], colors[4],
-                        ['all', ['>=', ['get', band], bins[4]], ['<', ['get', band], bins[5]]], colors[5],
-                        ['all', ['>=', ['get', band], bins[5]], ['<', ['get', band], bins[6]]], colors[6],
-                        ['all', ['>=', ['get', band], bins[6]], ['<', ['get', band], bins[7]]], colors[7],
-                        ['all', ['>=', ['get', band], bins[7]], ['<', ['get', band], bins[8]]], colors[8],
-                        colors[9] // else greater than 90
+                        ['<', ['get', band], thresholds[0]], colormap[0],
+                        ['all', ['>=', ['get', band], thresholds[0]], ['<', ['get', band], thresholds[1]]], colormap[1],
+                        ['all', ['>=', ['get', band], thresholds[1]], ['<', ['get', band], thresholds[2]]], colormap[2],
+                        ['all', ['>=', ['get', band], thresholds[2]], ['<', ['get', band], thresholds[3]]], colormap[3],
+                        ['all', ['>=', ['get', band], thresholds[3]], ['<', ['get', band], thresholds[4]]], colormap[4],
+                        ['all', ['>=', ['get', band], thresholds[4]], ['<', ['get', band], thresholds[5]]], colormap[5],
+                        ['all', ['>=', ['get', band], thresholds[5]], ['<', ['get', band], thresholds[6]]], colormap[6],
+                        ['all', ['>=', ['get', band], thresholds[6]], ['<', ['get', band], thresholds[7]]], colormap[7],
+                        ['all', ['>=', ['get', band], thresholds[7]], ['<', ['get', band], thresholds[8]]], colormap[8],
+                        ['all', ['>=', ['get', band], thresholds[8]], ['<', ['get', band], thresholds[9]]], colormap[9],
+                        colormap[10] // else greater than 90
                     ],
                     'circle-opacity': 1.0,
                     'circle-radius': [

@@ -1,10 +1,8 @@
 import { useState } from 'react'
-import { Box, IconButton, useThemeUI } from 'theme-ui'
+import { Box, IconButton } from 'theme-ui'
 import AnimateHeight from 'react-animate-height'
 
-const Info = ({ children }) => {
-  const context = useThemeUI()
-  const theme = context.theme
+export default function Info({ children }) {
 
   const [expanded, setExpanded] = useState(false)
   const toggle = (e) => {
@@ -17,7 +15,7 @@ const Info = ({ children }) => {
       letterSpacing: 'body',
       textTransform: 'none',
       fontFamily: 'body',
-      fontSize: [1, 1, 1, 2],
+      fontSize: [1],
       maxWidth: '100%',
       pb: [2],
     },
@@ -29,32 +27,29 @@ const Info = ({ children }) => {
         onClick={toggle}
         aria-label='Toggle more info'
         sx={{
+          width: '1.25rem',
+          height: '1.25rem',
           cursor: 'pointer',
           display: 'inline-block',
           float: 'right',
-          mr: '-10px',
-          mt: '-6px',
           '@media (hover: hover) and (pointer: fine)': {
             '&:hover > #icon': {
               stroke: 'text',
             },
           },
-          p: [0],
         }}
       >
         <Box
           as='svg'
-          height={'18px'}
-          width={'18px'}
+          height={'1rem'}
+          width={'1rem'}
           stroke='none'
           fill='none'
           viewBox={'0 0 30 30'}
           id='icon'
           sx={{
-            strokeWidth: '1.4px',
-            // stroke: expanded ? 'text' : 'muted',
+            strokeWidth: '1.75px',
             stroke: 'text',
-            transform: 'translate(0px, 5px)',
             transition: '0.1s',
           }}
         >
@@ -75,5 +70,3 @@ const Info = ({ children }) => {
     </>
   )
 }
-
-export default Info

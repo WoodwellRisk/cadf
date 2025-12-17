@@ -1,12 +1,15 @@
-import { IconButton } from 'theme-ui'
+import { useCallback, useRef } from 'react'
 import { keyframes } from '@emotion/react'
-import { useCallback, useEffect, useRef } from 'react'
+import { IconButton } from 'theme-ui'
+import { useBreakpointIndex } from '@theme-ui/match-media'
 import { useMapbox } from '@carbonplan/maps'
 import { Reset } from '@carbonplan/icons'
 
+
 import useStore from '../store/index'
 
-const ZoomReset = ({ mobile = false }) => {
+const ZoomReset = () => {
+    const isWide = useBreakpointIndex() > 0
     const { map } = useMapbox()
     const zoom = useStore((state) => state.zoom)
     const setZoom = useStore((state) => state.setZoom)
@@ -15,6 +18,7 @@ const ZoomReset = ({ mobile = false }) => {
     const resetButton = useRef(null)
 
     const initialZoom = 3.00
+    // const initialLon = 29.00
     const initialLon = 28.50
     const initialLat = -1.00
 
@@ -61,12 +65,17 @@ const ZoomReset = ({ mobile = false }) => {
             onAnimationEnd={handleAnimationEnd}
             disabled={zoom == initialZoom && center[0] == initialLon && center[1] == initialLat}
             sx={{
-                stroke: 'primary', cursor: 'pointer', ml: [2],
-                display: ['initial', 'initial', 'initial', 'initial'],
-                position: 'absolute',
+                display: isWide ? 'initial' : 'none',
+                stroke: 'primary', 
                 color: (zoom == initialZoom && center[0] == initialLon && center[1] == initialLat) ? 'muted' : 'primary',
-                left: [2],
-                bottom: mobile ? 80 : 20,
+                cursor: 'pointer',
+                position: 'absolute',
+                right: '0.5rem',
+                bottom: '0.5rem',
+                borderWidth: '1px',
+                borderStyle: 'solid',
+                borderColor: 'primary',
+                bg: 'background',
                 '.spin': {
                     animation: `${spin.toString()} 1s`,
                 },
