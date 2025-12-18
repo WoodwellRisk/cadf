@@ -1,7 +1,7 @@
 [mit license]: https://badgen.net/badge/license/MIT/blue
 ![MIT License][]
 
-# Woodwell Risk Central African drought forecast
+# Woodwell Risk Central African Drought Forecast (CADF)
 
 ## Data sources
 ...

@@ -118,6 +118,9 @@ const useStore = create((set, get) => ({
     showMenu: false,
     setShowMenu: (showMenu) => set({ showMenu }),
 
+    showCharts: false,
+    setShowCharts: (showCharts) => set({ showCharts }),
+
     showOverlays: false,
     setShowOverlays: (showOverlays) => set({ showOverlays }),
 

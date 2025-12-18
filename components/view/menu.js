@@ -38,6 +38,10 @@ export default function Menu() {
             borderStyle: 'solid',
             borderWidth: '1px',
             backgroundColor: 'background',
+            zIndex: 30,
+            position: 'absolute',
+            right: '0.5rem',
+            top: '0.5rem',
           }}
         >
           <Link

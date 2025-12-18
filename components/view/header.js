@@ -1,8 +1,9 @@
+import { useEffect } from 'react'
 import { Box, IconButton, Text } from 'theme-ui'
 import { alpha } from '@theme-ui/color'
 import { QuestionCircle, X } from '@carbonplan/icons'
 
-import MenuIcon from '../icons/menu-icon'
+import { ChartIcon, MenuIcon } from '../icons/index'
 import useStore from '../store/index'
 
 export default function Header() {
@@ -10,6 +11,15 @@ export default function Header() {
     const setShowMenu = useStore((state) => state.setShowMenu)
     const showAbout = useStore((state) => state.showAbout)
     const setShowAbout = useStore((state) => state.setShowAbout)
+    const showCharts = useStore((state) => state.showCharts)
+    const setShowCharts = useStore((state) => state.setShowCharts)
+    const setPlotData = useStore((state) => state.setPlotData)
+
+    useEffect(() => {
+        if(!showCharts) {
+            setPlotData({})
+        }
+    }, [showCharts])
 
     return (
         <Box as='div' id='header' sx={{bg: alpha('muted', 0.5)}}>
@@ -19,6 +29,17 @@ export default function Header() {
 
             <Box as='div' id='header-settings-container'>
                 {/* <Dimmer aria-label='Change theme to light or dark' /> */}
+
+                <IconButton
+                    key='info'
+                    id={'charts-toggle'}
+                    aria-label='Show or hide charts'
+                    onClick={() => { setShowCharts(!showCharts) }}
+                    sx={{ stroke: 'primary', cursor: 'pointer' }}
+                >
+                    { !showCharts && (<ChartIcon />) }
+                    { showCharts && (<X />) }
+                </IconButton>
 
                 <IconButton
                     key='info'

@@ -16,11 +16,20 @@ export default function Index() {
   const isWide = useBreakpointIndex() > 0
   const [colorMode, setColorMode] = useColorMode()
   const container = useRef(null)
+
+  const showCharts = useStore((store) => store.showCharts)
+  const setShowCharts = useStore((store) => store.setShowCharts)
   const plotData = useStore((store) => store.plotData)
 
   useEffect(() => {
     setColorMode('light')
   }, [])
+
+  useEffect(() => {
+    if(!isWide && showCharts) {
+      setShowCharts(false)
+    }
+  }, [isWide])
 
   return (
     <>
@@ -38,7 +47,7 @@ export default function Index() {
             <DesktopSettings />
           )}
 
-          {isWide && (
+          {isWide && showCharts && (
             <>
              {/* 
                The ChartContainer component places the chart on the page.
