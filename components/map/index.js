@@ -23,6 +23,7 @@ const Map = () => {
   const showLakes = useStore((state) => state.showLakes)
   const showCountriesOutline = useStore((state) => state.showCountriesOutline)
   const showStatesOutline = useStore((state) => state.showStatesOutline)
+  const showCharts = useStore((store) => store.showCharts)
 
   const sx = {
     label: {
@@ -93,10 +94,9 @@ const Map = () => {
         key={`time-${variable}-${confidence}`}
         id={'forecast'}
         source={'https://storage.googleapis.com/drc-drought-forecast/vector'}
-        variable={variable}
-        confidence={confidence}
         band={band}
         time={time}
+        showCharts={showCharts}
         borderColor={theme.rawColors.secondary}
       />
 

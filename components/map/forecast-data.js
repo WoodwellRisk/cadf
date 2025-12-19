@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from 'uuid'
 import { arrayRange, updatePaintProperty } from './utils'
 import useStore from '../store/index'
 
-const ForecastData = ({ id, source, band, time, borderColor, minZoom = null, maxZoom = null }) => {
+const ForecastData = ({ id, source, band, time, showCharts, borderColor, minZoom = null, maxZoom = null }) => {
 
     const { map } = useMapbox()
     const removed = useRef(false)
@@ -32,57 +32,62 @@ const ForecastData = ({ id, source, band, time, borderColor, minZoom = null, max
     setThresholds(thresholds)
 
     useEffect(() => {
-        if (filterCoordinates.length != 0) {
+        if (showCharts) {
 
-            let features = map.querySourceFeatures('forecast', {
-                sourceLayer: 'drought',
-                filter: [
-                    'all',
-                    // ['==', 'band', band],
-                    // ['==', 'coords', JSON.stringify(filterCoordinates)],
-                    ['==', 'x', filterCoordinates[0]],
-                    ['==', 'y', filterCoordinates[1]],
-                ],
-            });
+            if (filterCoordinates.length != 0) {
 
-            let plotData = {
-                'coordinates': filterCoordinates,
-                'time': [],
-                'percent_5': [],
-                'percent_20': [],
-                'percent_50': [],
-                'percent_80': [],
-                'percent_95': [],
-                'precip_5': [],
-                'precip_20': [],
-                'precip_50': [],
-                'precip_80': [],
-                'precip_95': [],
+                console.log(filterCoordinates)
+
+                let features = map.querySourceFeatures('forecast', {
+                    sourceLayer: 'drought',
+                    filter: [
+                        'all',
+                        // ['==', 'band', band],
+                        // ['==', 'coords', JSON.stringify(filterCoordinates)],
+                        ['==', 'x', filterCoordinates[0]],
+                        ['==', 'y', filterCoordinates[1]],
+                    ],
+                });
+
+                let plotData = {
+                    'coordinates': filterCoordinates,
+                    'time': [],
+                    'percent_5': [],
+                    'percent_20': [],
+                    'percent_50': [],
+                    'percent_80': [],
+                    'percent_95': [],
+                    'precip_5': [],
+                    'precip_20': [],
+                    'precip_50': [],
+                    'precip_80': [],
+                    'precip_95': [],
+                }
+
+                features.forEach((feature) => {
+                    plotData['time'].push(feature.properties['time']),
+
+                        plotData['percent_5'].push(feature.properties['percent_5']),
+                        plotData['percent_20'].push(feature.properties['percent_20']),
+                        plotData['percent_50'].push(feature.properties['percent_50']),
+                        plotData['percent_80'].push(feature.properties['percent_80']),
+                        plotData['percent_95'].push(feature.properties['percent_95']),
+
+                        plotData['precip_5'].push(feature.properties['precip_5']),
+                        plotData['precip_20'].push(feature.properties['precip_20']),
+                        plotData['precip_50'].push(feature.properties['precip_50']),
+                        plotData['precip_80'].push(feature.properties['precip_80']),
+                        plotData['precip_95'].push(feature.properties['precip_95'])
+                })
+
+                // sometimes the features are repeated at the boundaries of tiles, so we need to only keep the first 6 of each
+                // https://github.com/mapbox/mapbox-gl-js/issues/3147
+                Object.keys(plotData).forEach((key, index) => {
+                    plotData[key] = plotData[key].slice(0, 6)
+                });
+
+                setPlotData(plotData)
             }
-
-            features.forEach((feature) => {
-                plotData['time'].push(feature.properties['time']),
-
-                    plotData['percent_5'].push(feature.properties['percent_5']),
-                    plotData['percent_20'].push(feature.properties['percent_20']),
-                    plotData['percent_50'].push(feature.properties['percent_50']),
-                    plotData['percent_80'].push(feature.properties['percent_80']),
-                    plotData['percent_95'].push(feature.properties['percent_95']),
-
-                    plotData['precip_5'].push(feature.properties['precip_5']),
-                    plotData['precip_20'].push(feature.properties['precip_20']),
-                    plotData['precip_50'].push(feature.properties['precip_50']),
-                    plotData['precip_80'].push(feature.properties['precip_80']),
-                    plotData['precip_95'].push(feature.properties['precip_95'])
-            })
-
-            // sometimes the features are repeated at the boundaries of tiles, so we need to only keep the first 6 of each
-            // https://github.com/mapbox/mapbox-gl-js/issues/3147
-            Object.keys(plotData).forEach((key, index) => {
-                plotData[key] = plotData[key].slice(0, 6)
-            });
-
-            setPlotData(plotData)
         }
     }, [filterCoordinates])
 
@@ -200,7 +205,7 @@ const ForecastData = ({ id, source, band, time, borderColor, minZoom = null, max
     // https://docs.mapbox.com/mapbox-gl-js/example/queryrenderedfeatures/
     // we could also make an on click event to get the time series for the charts box
     map.on('mouseenter', layerIdRef.current, (event) => {
-        map.getCanvas().style.cursor = 'cell';
+        map.getCanvas().style.cursor = 'pointer';
     });
 
     map.on('click', layerIdRef.current, (event) => {

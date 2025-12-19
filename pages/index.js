@@ -17,6 +17,7 @@ export default function Index() {
   const [colorMode, setColorMode] = useColorMode()
   const container = useRef(null)
 
+  const showMenu = useStore((store) => store.showMenu)
   const showCharts = useStore((store) => store.showCharts)
   const setShowCharts = useStore((store) => store.setShowCharts)
   const plotData = useStore((store) => store.plotData)
@@ -47,7 +48,7 @@ export default function Index() {
             <DesktopSettings />
           )}
 
-          {isWide && showCharts && (
+          {isWide && showCharts && !showMenu && (
             <>
              {/* 
                The ChartContainer component places the chart on the page.

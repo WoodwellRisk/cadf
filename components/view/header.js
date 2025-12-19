@@ -1,12 +1,15 @@
 import { useEffect } from 'react'
 import { Box, IconButton, Text } from 'theme-ui'
 import { alpha } from '@theme-ui/color'
+import { useBreakpointIndex } from '@theme-ui/match-media'
 import { QuestionCircle, X } from '@carbonplan/icons'
 
 import { ChartIcon, MenuIcon } from '../icons/index'
 import useStore from '../store/index'
 
 export default function Header() {
+    const isWide = useBreakpointIndex() > 0
+
     const showMenu = useStore((state) => state.showMenu)
     const setShowMenu = useStore((state) => state.setShowMenu)
     const showAbout = useStore((state) => state.showAbout)
@@ -22,24 +25,66 @@ export default function Header() {
     }, [showCharts])
 
     return (
-        <Box as='div' id='header' sx={{bg: alpha('muted', 0.5)}}>
+        <Box 
+            as='div' 
+            id='header' 
+            sx={{position: 'relative', bg: alpha('muted', 0.5)}}
+        >
             <Box as='div' id='org-name-container'>
                 <Text id='org-name-text'>Woodwell Climate</Text>
             </Box>
 
-            <Box as='div' id='header-settings-container'>
+            <Box 
+                as='div' 
+                id='header-settings-container'
+                sx={{
+                    '#charts-toggle:hover ~ #charts-hover-error': {
+                        visibility: (isWide && showMenu) ? 'visible' : 'hidden',
+                    }
+                }}
+            >
                 {/* <Dimmer aria-label='Change theme to light or dark' /> */}
 
                 <IconButton
-                    key='info'
+                    key='charts'
                     id={'charts-toggle'}
                     aria-label='Show or hide charts'
                     onClick={() => { setShowCharts(!showCharts) }}
-                    sx={{ stroke: 'primary', cursor: 'pointer' }}
+                    disabled={showMenu}
+                    sx={{ 
+                        stroke: showMenu ? alpha('primary', 0.75) : 'primary', 
+                        cursor: !showMenu ? 'pointer' : 'not-allowed',
+                        '&:hover': {
+                            stroke: showMenu ? 'red' : 'primary',
+                            p: showMenu ? '0.5rem' : 0,
+                            outlineWidth: !showMenu ? '0px' : '1px',
+                            outlineStyle: 'solid',
+                            outlineColor: 'red',
+                        }
+                    }}
                 >
-                    { !showCharts && (<ChartIcon />) }
+                    { (isWide && !showCharts || showMenu) && (<ChartIcon />) }
                     { showCharts && (<X />) }
                 </IconButton>
+
+                <Box 
+                    as='div'
+                    id='charts-hover-error'
+                    sx={{
+                        visibility: 'hidden',
+                        position: 'absolute',
+                        zIndex: 40,
+                        right: '0.75rem',
+                        bottom: '-50%',
+                        color: 'white',
+                        bg: 'primary',
+                        fontSize: '0.9rem',
+                        p: [2],
+                        borderRadius: '0.5rem',
+                    }}
+                >
+                    Please exit from menu before continuing
+                </Box>
 
                 <IconButton
                     key='info'
