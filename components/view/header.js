@@ -52,7 +52,8 @@ export default function Header() {
                     onClick={() => { setShowCharts(!showCharts) }}
                     disabled={showMenu}
                     sx={{ 
-                        stroke: showMenu ? alpha('primary', 0.75) : 'primary', 
+                        // stroke: showMenu ? alpha('primary', 0.75) : 'primary', 
+                        stroke: 'primary',
                         cursor: !showMenu ? 'pointer' : 'not-allowed',
                         '&:hover': {
                             stroke: showMenu ? 'red' : 'primary',
@@ -63,7 +64,7 @@ export default function Header() {
                         }
                     }}
                 >
-                    { (isWide && !showCharts || showMenu) && (<ChartIcon />) }
+                    { (isWide && (!showCharts || showMenu)) && (<ChartIcon />) }
                     { showCharts && (<X />) }
                 </IconButton>
 
