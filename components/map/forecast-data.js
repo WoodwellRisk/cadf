@@ -32,6 +32,10 @@ const ForecastData = ({ id, source, band, time, showCharts, borderColor, minZoom
     setThresholds(thresholds)
 
     useEffect(() => {
+        console.log(map.getZoom())
+    }, [map.getZoom()])
+
+    useEffect(() => {
         if (showCharts) {
 
             if (filterCoordinates.length != 0) {
@@ -149,16 +153,17 @@ const ForecastData = ({ id, source, band, time, showCharts, borderColor, minZoom
                     'circle-radius': [
                         // https://docs.mapbox.com/style-spec/reference/expressions/
                         'interpolate', ['linear'], ['zoom'],
+                        // 2, ['get', 'agree'],
                         2, 1,
                         3, 2,
                         4, 3,
-                        zoomChange, ['get', 'agree'],
+                        4.1, ['get', 'agree'],
+                        // zoomChange, ['get', 'agree'],
                         5, ['^', 1.75, ['get', 'agree']],
                         5.5, ['^', 1.825, ['get', 'agree']],
                         6, ['^', 2, ['get', 'agree']],
                         6.5, ['^', 2.25, ['get', 'agree']],
                         7, ['^', 2.75, ['get', 'agree']],
-
                     ],
                     // https://docs.mapbox.com/help/glossary/layout-paint-property/
                     'circle-stroke-color': borderColor,
@@ -193,10 +198,18 @@ const ForecastData = ({ id, source, band, time, showCharts, borderColor, minZoom
         } else {
             let layers = map.getStyle().layers
             let forecast = layers.filter((layer) => layer.source == 'forecast')[0]
-            if (forecast.paint['circle-stroke-color'] != borderWidth) {
-                updatePaintProperty(map, layerIdRef, 'circle-stroke-width', borderWidth)
+            // if (forecast.paint['circle-stroke-color'] != borderWidth) {
+            //     updatePaintProperty(map, layerIdRef, 'circle-stroke-width', borderWidth)
+            // }
+            if (zoom < zoomChange) {
+                updatePaintProperty(map, layerIdRef, 'circle-stroke-width', 0.25)
+            } else if (zoom < 5) {
+                updatePaintProperty(map, layerIdRef, 'circle-stroke-width', 0.50)
+            } else if (zoom < 5.5) {
+                updatePaintProperty(map, layerIdRef, 'circle-stroke-width', 1.00)
+            } else {
+                updatePaintProperty(map, layerIdRef, 'circle-stroke-width', 1.50)
             }
-
         }
     }, [zoom])
 

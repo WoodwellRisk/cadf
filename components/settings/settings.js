@@ -98,7 +98,7 @@ export default function Settings() {
     let newIdx = event.target.getAttribute('data-idx')
     setVariableIdx(newIdx)
 
-    let variable = event.target.innerHTML == 'Percentile' ? 'percent' : event.target.innerHTML == 'Precipitation' ? 'precip' : null
+    let variable = event.target.innerHTML == 'Water balance' ? 'percent' : event.target.innerHTML == 'Precipitation' ? 'precip' : null
     if (variable != null) {
       setVariable(variable)
     }
@@ -114,7 +114,7 @@ export default function Settings() {
     }
   })
 
-  let variableLabels = ['Percentile', 'Precipitation']
+  let variableLabels = ['Water balance', 'Precipitation']
   let variableOptions = variableLabels.map((label, idx) => {
     return (
       <Box 
