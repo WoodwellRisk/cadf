@@ -16,7 +16,6 @@ const ForecastData = ({ id, source, band, time, showCharts, borderColor, minZoom
     const clim = useStore((state) => state.clim)()
     const setThresholds = useStore((state) => state.setThresholds)
     const colormap = useStore((state) => state.colormap)()
-    const borderWidth = 0.5
     const zoom = useStore((state) => state.zoom)
     const zoomChange = 4.5
     const setPlotData = useStore((state) => state.setPlotData)
@@ -30,10 +29,6 @@ const ForecastData = ({ id, source, band, time, showCharts, borderColor, minZoom
     const binWidth = range / nBins;
     let thresholds = arrayRange(min + binWidth, max + binWidth, binWidth)
     setThresholds(thresholds)
-
-    useEffect(() => {
-        console.log(map.getZoom())
-    }, [map.getZoom()])
 
     useEffect(() => {
         if (showCharts) {
@@ -217,9 +212,9 @@ const ForecastData = ({ id, source, band, time, showCharts, borderColor, minZoom
     // https://docs.mapbox.com/mapbox-gl-js/example/popup-on-hover/
     // https://docs.mapbox.com/mapbox-gl-js/example/queryrenderedfeatures/
     // we could also make an on click event to get the time series for the charts box
-    map.on('mouseenter', layerIdRef.current, (event) => {
-        map.getCanvas().style.cursor = 'pointer';
-    });
+    // map.on('mouseenter', layerIdRef.current, (event) => {
+    //     map.getCanvas().style.cursor = 'pointer';
+    // });
 
     map.on('click', layerIdRef.current, (event) => {
 

@@ -1,15 +1,19 @@
 import { useThemeUI } from 'theme-ui'
 import { Map as MapContainer, Fill, Line } from '@carbonplan/maps'
 import ForecastData from './forecast-data'
+import PointQuery from './point-query'
 import LayerOrder from './layer-order'
 // import Router from './router'
 import ZoomReset from './zoom-reset'
+import ZoomHelper from './zoom-helper'
 
 import useStore from '../store/index'
 
 const Map = () => {
   const { theme } = useThemeUI()
   const center = useStore((state) => state.center)
+  const mapCenter = useStore((state) => state.mapCenter)
+
   const zoom = useStore((state) => state.zoom)
   const maxZoom = useStore((state) => state.maxZoom)
   const bounds = useStore((state) => state.bounds)
@@ -100,6 +104,10 @@ const Map = () => {
         borderColor={theme.rawColors.secondary}
       />
 
+      {/* {showCharts && (
+        <PointQuery key={`point-query-${showCharts}`} />
+      )} */}
+
       {showLandOutline && (
         <Line
           id={'land'}
@@ -119,6 +127,8 @@ const Map = () => {
         */}
 
       <ZoomReset />
+
+      <ZoomHelper />
 
       {/* <Router /> */}
 

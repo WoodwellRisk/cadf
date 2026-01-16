@@ -8,8 +8,13 @@ const useStore = create((set, get) => ({
     minZoom: 1,
     maxZoom: 7,
 
+    // this is for the initial map load
     center: [29.00, -1.00],
     setCenter: (center) => set({ center }),
+
+    // this is for placing the region picker later
+    mapCenter: [29.00, -1.00],
+    setMapCenter: (mapCenter) => set({ mapCenter }),
     
     // https://docs.mapbox.com/mapbox-gl-js/example/fitbounds/
     // [west, south, east, north]
