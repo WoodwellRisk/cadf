@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useThemeUI, Box } from 'theme-ui'
 import { useMapbox } from '@carbonplan/maps'
-import { point } from '@turf/turf';
+// import { circle as Circle, point } from '@turf/turf';
 import { v4 as uuidv4 } from 'uuid'
 
 export default function PointQuery({ key, id }) {

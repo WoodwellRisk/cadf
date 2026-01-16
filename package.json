@@ -33,6 +33,7 @@
     "@emotion/react": "^11.11.4",
     "@theme-ui/color": "^0.16.2",
     "@theme-ui/match-media": "^0.16.2",
+    "@turf/turf": "^7.3.2",
     "d3": "^7.9.0",
     "file-saver": "^2.0.5",
     "next": ">=14.2.10",
