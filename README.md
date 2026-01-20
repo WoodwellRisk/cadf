@@ -1,5 +1,4 @@
-[mit license]: https://badgen.net/badge/license/MIT/blue
-![MIT License][]
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/WoodwellRisk/cadf/blob/main/LICENSE)
 
 # Woodwell Risk Central African Drought Forecast (CADF)
 
