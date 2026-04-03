@@ -2,12 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import { makeColormap } from '@carbonplan/colormaps';
 import { ZarrLayer as ZarrDataLayer } from '@carbonplan/zarr-layer';
 import { useMap } from './map-provider';
+import { useMapView } from './use-map-view';
 import { useStore } from '../store/index';
 
 const ZarrLayer = ({ id, source, variable, opacity }) => {
   const zarrLayerRef = useRef(null);
   const removed = useRef(false);
   const { map } = useMap();
+  const { zoom, center } = useMapView();
 
   // const band = useStore(state => state.band)()
   // const clim = useStore(state => state.clim)()
@@ -15,42 +17,74 @@ const ZarrLayer = ({ id, source, variable, opacity }) => {
   const historicalDate = useStore((state) => state.historicalDate);
   // const timePeriod = useStore(state => state.timePeriod)
 
+  useEffect(() => {
+    if (!zarrLayerRef.current) return;
+
+    console.log(zoom);
+    if (zoom < 4.5) zarrLayerRef.current.setUniforms({ u_zoom: zoom });
+    if (zoom >= 4.5) zarrLayerRef.current.setUniforms({ u_zoom: zoom });
+  }, [zoom]);
+
   const customFrag = `
-    // --- CONSTANTS ---
     const float TILE_SIZE = 256.0;
-    const float BORDER_WIDTH = 0.05; // 5% of a pixel width
+
+    uniform float u_zoom;
+    const float ZOOM_THRESHOLD = 4.5;
+    // 0 at low zooms, 5% of a pixel width at medium / high zooms
+    float borderWidth = (u_zoom >= ZOOM_THRESHOLD) ? 0.1 : 0.0;
+
+    // recalculate the texture and color
+    // https://github.com/carbonplan/zarr-layer/tree/main?tab=readme-ov-file#ndvi-example
+    // band / variable name
+    float dataVal = perc;
+    // Handle NaN/Fill values (optional, but good practice)
+    if (isnan(dataVal)) {
+      fragColor.a = 0.0;
+      return;
+    }
+
+    // normalize the data
+    float norm = (dataVal - clim.x) / (clim.y - clim.x);
     
-    // --- GEOMETRY (Assuming pix_coord is 0.0 to 1.0) ---
+    // sample the colormap
+    vec4 c = texture(colormap, vec2(clamp(norm, 0.0, 1.0), 0.5));
+    
+    // base color with opacity
+    vec4 baseColor = vec4(c.rgb, opacity);
+
+    // assuming pix_coord is 0.0 to 1.0
     vec2 texelSize = 1.0 / vec2(TILE_SIZE);
     
-    // Calculate the center of the current pixel in normalized space
+    // calculate the center of the current pixel in normalized space
     // floor(pix_coord / texelSize) gives the pixel index (0 to 255)
     // + 0.5 gives the center of that pixel
-    vec2 texelCenter = (floor(pix_coord / texelSize) + 0.5) * texelSize;
+    vec2 pixelIndex = floor(pix_coord * TILE_SIZE) + 0.5;
+    vec2 texelCenter = pixelIndex / TILE_SIZE;
     
     float dist = distance(pix_coord, texelCenter);
-    float maxDist = 0.5 * texelSize.x; // Half the width of one pixel
+    // half the width of one pixel
+    float maxDist = 0.5 * texelSize.x;
     
-    // Radius settings
-    float radiusFactor = 0.85; // Circle fills 85% of the pixel
+    // radius settings
+    // circle fills 85% of the pixel
+    float radiusFactor = 0.85;
     float outerRadius = maxDist * radiusFactor;
-    float innerRadius = maxDist * (radiusFactor - BORDER_WIDTH);
+    float innerRadius = maxDist * (radiusFactor - borderWidth);
     
-    // --- MASKING LOGIC ---
-    // 1. OUTSIDE the circle: Make transparent
+    // make area outside of the circle transparent
     if (dist > outerRadius) {
       fragColor.a = 0.0;
       return;
     }
     
-    // 2. INSIDE the inner circle: Keep original color
+    // keep original color inside circle
     if (dist <= innerRadius) {
-      // Do nothing. fragColor is already set by the base shader.
+      fragColor = baseColor;
     } 
-    // 3. BORDER: Black
+    // add black border around circles
+    // set rgb to black, keep the alpha from the base shader
     else {
-      // Set RGB to black, keep the alpha from the base shader
-      fragColor = vec4(0.0, 0.0, 0.0, fragColor.a);
+      fragColor = vec4(0.0, 0.0, 0.0, opacity);
     }
   `;
 
@@ -76,8 +110,8 @@ const ZarrLayer = ({ id, source, variable, opacity }) => {
       colormap: makeColormap('redteal', { mode: 'light', count: 255 }),
       opacity: opacity,
       selector: { variable: variable, time: historicalDate },
-      // uniforms:
-      // customFrag: customFrag,
+      uniforms: { u_zoom: zoom },
+      customFrag: customFrag,
     });
     map.addLayer(zarrLayer);
     zarrLayerRef.current = zarrLayer;
