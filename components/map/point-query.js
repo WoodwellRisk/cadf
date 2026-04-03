@@ -1,27 +1,27 @@
-import { useEffect, useRef, useState } from 'react'
-import { useThemeUI, Box } from 'theme-ui'
-import { useMapbox } from '@carbonplan/maps'
+import { useEffect, useRef, useState } from 'react';
+import { useThemeUI, Box } from 'theme-ui';
+import { useMap } from './map-provider';
 // import { circle as Circle, point } from '@turf/turf';
-import { v4 as uuidv4 } from 'uuid'
+import { v4 as uuidv4 } from 'uuid';
 
 export default function PointQuery({ key, id }) {
-  const { theme } = useThemeUI()
-  const { map } = useMapbox()
+  const { theme } = useThemeUI();
+  const { map } = useMap();
 
-  const removed = useRef(false)
-  const sourceIdRef = useRef()
-  const layerIdRef = useRef()
+  const removed = useRef(false);
+  const sourceIdRef = useRef();
+  const layerIdRef = useRef();
 
   function toFourDecimalPlaces(num) {
     return parseFloat(num.toFixed(4));
   }
 
-  const coords = map.getCenter()
-  const center = [coords['lng'], coords['lat']]
+  const coords = map.getCenter();
+  const center = [coords['lng'], coords['lat']];
 
   const [coordinates, setCoordinates] = useState([
     `Longitude: ${toFourDecimalPlaces(center[0])}`,
-    `Latitude: ${toFourDecimalPlaces(center[1])}`
+    `Latitude: ${toFourDecimalPlaces(center[1])}`,
   ]);
 
   // https://docs.mapbox.com/mapbox-gl-js/example/drag-a-point/
@@ -34,9 +34,9 @@ export default function PointQuery({ key, id }) {
         geometry: {
           type: 'Point',
           coordinates: center,
-        }
-      }
-    ]
+        },
+      },
+    ],
   };
   // const draggablePoint = Circle(center, 20, { units: 'kilometers' });
   // const draggablePoint = point(center);
@@ -47,16 +47,15 @@ export default function PointQuery({ key, id }) {
 
   useEffect(() => {
     map.on('remove', () => {
-      removed.current = true
-    })
-  }, [])
+      removed.current = true;
+    });
+  }, []);
 
   useEffect(() => {
-    sourceIdRef.current = uuidv4()
-    const { current: sourceId } = sourceIdRef
+    sourceIdRef.current = uuidv4();
+    const { current: sourceId } = sourceIdRef;
 
     if (!map.getSource(sourceId)) {
-
       // const coords = map.getCenter()
       // console.log([coords['lng'], coords['lat']])
       // const center = [coords['lng'], coords['lat']]
@@ -66,14 +65,14 @@ export default function PointQuery({ key, id }) {
       map.addSource(sourceId, {
         type: 'geojson',
         data: draggablePoint,
-      })
+      });
     }
-  }, [key])
+  }, [key]);
 
   useEffect(() => {
-    const { current: sourceId } = sourceIdRef
-    layerIdRef.current = uuidv4()
-    const { current: layerId } = layerIdRef
+    const { current: sourceId } = sourceIdRef;
+    layerIdRef.current = uuidv4();
+    const { current: layerId } = layerIdRef;
 
     if (!map.getLayer(layerId)) {
       map.addLayer({
@@ -83,15 +82,19 @@ export default function PointQuery({ key, id }) {
         paint: {
           'circle-radius': [
             // 'step', ['zoom'],
-            'interpolate', ['linear'], ['zoom'],
-            5, 10,
-            7, 20,
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            5,
+            10,
+            7,
+            20,
           ],
           'circle-color': theme.rawColors.primary,
           'circle-stroke-width': 2,
           'circle-stroke-color': theme.rawColors.primary,
-        }
-      })
+        },
+      });
     }
 
     function onMove(e) {
@@ -108,7 +111,7 @@ export default function PointQuery({ key, id }) {
 
       setCoordinates([
         `Longitude: ${toFourDecimalPlaces(coords.lng)}`,
-        `Latitude:   ${toFourDecimalPlaces(coords.lat)}`
+        `Latitude:   ${toFourDecimalPlaces(coords.lat)}`,
       ]);
 
       map.getCanvas().style.cursor = '';
@@ -153,15 +156,15 @@ export default function PointQuery({ key, id }) {
     return () => {
       if (!removed.current) {
         if (map.getLayer(layerId)) {
-          map.removeLayer(layerId)
+          map.removeLayer(layerId);
         }
       }
-    }
-  }, [])
+    };
+  }, []);
 
   return (
     <Box
-      as='div'
+      as="div"
       id={'coordinates-container'}
       sx={{
         // width: '150px',
@@ -184,9 +187,12 @@ export default function PointQuery({ key, id }) {
         borderRadius: '3px',
       }}
     >
-      {coordinates && (
-        coordinates.map((coord, idx) => <p key={idx} style={{ margin: 0 }}>{coord}</p>)
-      )}
+      {coordinates &&
+        coordinates.map((coord, idx) => (
+          <p key={idx} style={{ margin: 0 }}>
+            {coord}
+          </p>
+        ))}
     </Box>
-  )
+  );
 }

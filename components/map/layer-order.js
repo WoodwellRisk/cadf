@@ -1,83 +1,97 @@
-import { useEffect } from 'react'
-import { useMapbox } from '@carbonplan/maps'
+import { useEffect } from 'react';
 
-import useStore from '../store/index'
+import { useMap } from './map-provider';
+import { useStore } from '../store/index';
 
 const LayerOrder = () => {
-    const { map } = useMapbox()
-    const showStatesOutline = useStore((state) => state.showStatesOutline)
-    const showCountriesOutline = useStore((state) => state.showCountriesOutline)
-    const showCharts = useStore((state) => state.showCharts)
-    const band = useStore((state) => state.band)()
-    const time = useStore((state) => state.time)
+  const { map } = useMap();
+  const timePeriod = useStore((state) => state.timePeriod);
+  const showStatesOutline = useStore((state) => state.showStatesOutline);
+  const showCountriesOutline = useStore((state) => state.showCountriesOutline);
+  const showCharts = useStore((state) => state.showCharts);
+  const band = useStore((state) => state.band)();
+  const time = useStore((state) => state.time);
+  const opacity = useStore((state) => state.opacity);
 
-    // this method is only partly working
-    // when the states layer is turned on after the countries layer,
-    // it ends up behind the forecast data
-    useEffect(() => {
-        if (showCountriesOutline && showStatesOutline) {
-            let layers = map.getStyle().layers;
-            let states = layers.filter((layer) => layer.source == 'states')[0]
-            let countries = layers.filter((layer) => layer.source == 'countries')[0]
+  // this method is only partly working
+  // when the states layer is turned on after the countries layer,
+  // it ends up behind the forecast data
+  useEffect(() => {
+    if (!map) return;
 
-            if (countries.length != 0) {
-                map.moveLayer(states.id, countries.id)
-            }
-        }
-    }, [showStatesOutline])
+    if (showCountriesOutline && showStatesOutline) {
+      let layers = map.getStyle().layers;
+      let states = layers.filter((layer) => layer.source == 'states')[0];
+      let countries = layers.filter((layer) => layer.source == 'countries')[0];
 
-    // there is something wrong with this logic, where the forecast layer 
-    // is put above the land, ocean, states, and countries layers
-    // useEffect(() => {
-    //     if (showCountriesOutline || showStatesOutline) {
-    //         let layers = map.getStyle().layers;
+      if (countries.length != 0) {
+        map.moveLayer(states.id, countries.id);
+      }
+    }
+  }, [map, timePeriod, showStatesOutline]);
 
-    //         let states = layers.filter((layer) => layer.source == 'states')[0]
-    //         let countries = layers.filter((layer) => layer.source == 'countries')[0]
-    //         let forecast = layers.filter((layer) => layer.source == 'forecast')[0]
+  // there is something wrong with this logic, where the forecast layer
+  // is put above the land, ocean, states, and countries layers
+  // useEffect(() => {
+  //     if(!map) return
+  //
+  //     if (showCountriesOutline || showStatesOutline) {
+  //         let layers = map.getStyle().layers;
 
-    //         if (forecast && showStatesOutline) {
-    //             map.moveLayer(forecast.id, states.id)
-    //         }
+  //         let states = layers.filter((layer) => layer.source == 'states')[0]
+  //         let countries = layers.filter((layer) => layer.source == 'countries')[0]
+  //         let forecast = layers.filter((layer) => layer.source == 'forecast')[0]
 
-    //         if (forecast && showCountriesOutline) {
-    //             map.moveLayer(forecast.id, countries.id)
-    //         }
-    //     }
-    // }, [showStatesOutline, showCountriesOutline])
+  //         if (forecast && showStatesOutline) {
+  //             map.moveLayer(forecast.id, states.id)
+  //         }
 
-    useEffect(() => {
-        let layers = map.getStyle().layers;
+  //         if (forecast && showCountriesOutline) {
+  //             map.moveLayer(forecast.id, countries.id)
+  //         }
+  //     }
+  // }, [map, timePeriod, showStatesOutline, showCountriesOutline])
 
-        let land = layers.filter((layer) => layer.source == 'land')[0]
-        let ocean = layers.filter((layer) => layer.source == 'ocean')[0]
+  useEffect(() => {
+    if (!map) return;
 
-        let states = layers.filter((layer) => layer.source == 'states')[0]
-        let countries = layers.filter((layer) => layer.source == 'countries')[0]
+    let layers = map.getStyle().layers;
 
-        let forecast = layers.filter((layer) => layer.source == 'forecast')[0]
+    let land = layers.filter((layer) => layer.source == 'land')[0];
+    let ocean = layers.filter((layer) => layer.source == 'ocean')[0];
 
-        map.moveLayer(forecast.id, ocean.id)
-        map.moveLayer(forecast.id, land.id)
+    let states = layers.filter((layer) => layer.source == 'states')[0];
+    let countries = layers.filter((layer) => layer.source == 'countries')[0];
 
-        if(states) {
-            map.moveLayer(forecast.id, states.id)
-        }
+    let forecast = layers.filter((layer) => layer.source == 'forecast')[0];
+    // let historical = layers.filter((layer) => layer.source == 'historical')[0]
 
-        if(countries) {
-            map.moveLayer(forecast.id, countries.id)
-        }
+    if (forecast) {
+      map.moveLayer(forecast.id, ocean.id);
+      map.moveLayer(forecast.id, land.id);
 
-        if(states && countries) {
-            map.moveLayer(states.id, countries.id)
-        }
+      if (states) map.moveLayer(forecast.id, states.id);
+      if (countries) map.moveLayer(forecast.id, countries.id);
+    }
 
-        // this hides the points on or outside the land border
-        // map.moveLayer(ocean.id, land.id)
+    // if(historical) {
+    //     console.log('Should be true!!!')
+    //     map.moveLayer(historical.id, ocean.id)
+    //     map.moveLayer(historical.id, land.id)
 
-    }, [band, time])
+    //     if(states) map.moveLayer(historical.id, states.id)
+    //     if(countries) map.moveLayer(historical.id, countries.id)
+    // }
 
-    return null
-}
+    if (states && countries) {
+      map.moveLayer(states.id, countries.id);
+    }
 
-export default LayerOrder
+    // this hides the points on or outside the land border
+    // map.moveLayer(ocean.id, land.id)
+  }, [map, timePeriod, band, time, opacity]);
+
+  return null;
+};
+
+export default LayerOrder;

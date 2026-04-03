@@ -1,9 +1,9 @@
-import { Box, Link } from 'theme-ui'
+import { Box, Link } from 'theme-ui';
 
-import useStore from '../store/index'
+import { useStore } from '../store/index';
 
 export default function Menu() {
-  const showMenu = useStore((state) => state.showMenu)
+  const showMenu = useStore((state) => state.showMenu);
 
   const sx = {
     link: {
@@ -23,16 +23,18 @@ export default function Menu() {
       '&:hover': {
         color: 'secondary',
       },
-      '&: last-child' : {
+      '&: last-child': {
         borderBottomWidth: '0',
       },
-    }
-  }
+    },
+  };
 
   return (
     <>
       {showMenu && (
-        <Box as='div' id='menu-container'
+        <Box
+          as="div"
+          id="menu-container"
           sx={{
             borderColor: 'primary',
             borderStyle: 'solid',
@@ -47,7 +49,7 @@ export default function Menu() {
           <Link
             className={'menu-link'}
             sx={sx.link}
-            href='https://www.woodwellclimate.org/research-area/risk/'
+            href="https://www.woodwellclimate.org/research-area/risk/"
             target="_blank"
           >
             About
@@ -56,7 +58,7 @@ export default function Menu() {
           <Link
             className={'menu-link'}
             sx={sx.link}
-            href='https://woodwellrisk.github.io/'
+            href="https://woodwellrisk.github.io/"
             target="_blank"
           >
             Research
@@ -65,15 +67,13 @@ export default function Menu() {
           <Link
             className={'menu-link'}
             sx={sx.link}
-            href='https://github.com/WoodwellRisk'
+            href="https://github.com/WoodwellRisk"
             target="_blank"
           >
             Code
           </Link>
-
-
         </Box>
       )}
     </>
-  )
+  );
 }

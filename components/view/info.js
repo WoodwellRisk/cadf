@@ -1,13 +1,12 @@
-import { useState } from 'react'
-import { Box, IconButton } from 'theme-ui'
-import AnimateHeight from 'react-animate-height'
+import { useState } from 'react';
+import { Box, IconButton } from 'theme-ui';
+import AnimateHeight from 'react-animate-height';
 
 export default function Info({ children }) {
-
-  const [expanded, setExpanded] = useState(false)
+  const [expanded, setExpanded] = useState(false);
   const toggle = (e) => {
-    setExpanded(!expanded)
-  }
+    setExpanded(!expanded);
+  };
 
   const sx = {
     body: {
@@ -19,13 +18,13 @@ export default function Info({ children }) {
       maxWidth: '100%',
       pb: [2],
     },
-  }
+  };
 
   return (
     <>
       <IconButton
         onClick={toggle}
-        aria-label='Toggle more info'
+        aria-label="Toggle more info"
         sx={{
           width: '1.25rem',
           height: '1.25rem',
@@ -40,33 +39,29 @@ export default function Info({ children }) {
         }}
       >
         <Box
-          as='svg'
+          as="svg"
           height={'1rem'}
           width={'1rem'}
-          stroke='none'
-          fill='none'
+          stroke="none"
+          fill="none"
           viewBox={'0 0 30 30'}
-          id='icon'
+          id="icon"
           sx={{
             strokeWidth: '1.75px',
             stroke: 'text',
             transition: '0.1s',
           }}
         >
-          <line x1='13' y1='12.3' x2='13' y2='19.5' />
-          <line x1='13' y1='7.9' x2='13' y2='10.1' />
-          <circle cx='13' cy='13' r='12' />
+          <line x1="13" y1="12.3" x2="13" y2="19.5" />
+          <line x1="13" y1="7.9" x2="13" y2="10.1" />
+          <circle cx="13" cy="13" r="12" />
         </Box>
       </IconButton>
       <Box sx={{ pt: [2], mb: [-2] }}>
-        <AnimateHeight
-          duration={100}
-          height={expanded ? 'auto' : 0}
-          easing={'linear'}
-        >
+        <AnimateHeight duration={100} height={expanded ? 'auto' : 0} easing={'linear'}>
           <Box sx={sx.body}>{children}</Box>
         </AnimateHeight>
       </Box>
     </>
-  )
+  );
 }

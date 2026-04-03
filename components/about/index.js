@@ -1,12 +1,11 @@
-import { Box, Text } from 'theme-ui'
-import { Reset } from '@carbonplan/icons'
+import { Box, Text } from 'theme-ui';
+import { Reset } from '@carbonplan/icons';
 
-import InfoDemo from './info-demo'
+import InfoDemo from './info-demo';
+import { useStore } from '../store/index';
 
-import useStore from '../store/index'
-
-export default function About() {
-  const showAbout = useStore((state) => state.showAbout)
+export const About = () => {
+  const showAbout = useStore((state) => state.showAbout);
 
   const sx = {
     'about-container': {
@@ -34,37 +33,36 @@ export default function About() {
       lineHeight: 'h3',
     },
     'text-highlight': {
-      bg: 'muted'
-    }
-  }
+      bg: 'muted',
+    },
+  };
 
   return (
-    <Box as='div' id='about-container' sx={sx['about-container']}>
-
-      <Box id='about-inner-container' sx={sx['about-inner-container']}>
-
+    <Box as="div" id="about-container" sx={sx['about-container']}>
+      <Box id="about-inner-container" sx={sx['about-inner-container']}>
         <Box sx={sx['about-heading']}>
           <Text sx={{ textDecoration: 'underline' }}>How to use this site</Text>
         </Box>
 
         <Box>
           <Text>
-            You will find an <Text sx={sx['text-highlight']}>Info</Text> icon next to each variable's name. There, you will find
-            additional information about what the variable is showing, how the data layer was created, and links to any additional
-            information if there is any. Clicking on the <Text sx={sx['text-highlight']}>Info</Text> icon reveals hidden dropdown text. You can try this with
-            the icon to the right.
+            You will find an <Text sx={sx['text-highlight']}>Info</Text> icon next to each
+            variable's name. There, you will find additional information about what the variable is
+            showing, how the data layer was created, and links to any additional information if
+            there is any. Clicking on the <Text sx={sx['text-highlight']}>Info</Text> icon reveals
+            hidden dropdown text. You can try this with the icon to the right.
             <InfoDemo>This is hidden dropdown text.</InfoDemo>
           </Text>
         </Box>
 
         <Box sx={{ mt: 2 }}>
           <Text>
-            The <Text sx={sx['text-highlight']}>Reset</Text> icon resets the map extent to the original zoom and center.
-            Test this on the map by panning and zooming, then clicking on the <Reset sx={{ strokeWidth: 1, width: 15, height: 15 }} /> icon.
+            The <Text sx={sx['text-highlight']}>Reset</Text> icon resets the map extent to the
+            original zoom and center. Test this on the map by panning and zooming, then clicking on
+            the <Reset sx={{ strokeWidth: 1, width: 15, height: 15 }} /> icon.
           </Text>
         </Box>
       </Box>
-
     </Box>
-  )
-}
+  );
+};

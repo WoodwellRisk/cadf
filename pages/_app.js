@@ -1,9 +1,8 @@
-import { ThemeUIProvider } from 'theme-ui'
-import '@carbonplan/components/globals.css'
-import '@carbonplan/components/fonts.css'
-import '@carbonplan/maps/mapbox.css'
-import './stylesheet.css'
-import theme from '@carbonplan/theme'
+import { ThemeUIProvider } from 'theme-ui';
+import '@carbonplan/components/globals.css';
+import 'maplibre-gl/dist/maplibre-gl.css';
+import './stylesheet.css';
+import theme from '@carbonplan/theme';
 
 const App = ({ Component, pageProps }) => {
   theme.fonts = {
@@ -12,13 +11,13 @@ const App = ({ Component, pageProps }) => {
     heading: 'ginto-normal',
     mono: 'ginto-normal',
     numbers: 'gemeli-normal',
-  }
+  };
 
   return (
     <ThemeUIProvider theme={theme}>
       <Component {...pageProps} />
     </ThemeUIProvider>
-  )
-}
+  );
+};
 
-export default App
+export default App;

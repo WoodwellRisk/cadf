@@ -1,27 +1,37 @@
-import { useCallback, useEffect } from 'react'
-import { Box } from 'theme-ui'
-import { useBreakpointIndex } from '@theme-ui/match-media'
-import { alpha } from '@theme-ui/color'
-import { Slider } from '@carbonplan/components'
+import { useCallback, useEffect } from 'react';
+import { Box, Input } from 'theme-ui';
+import { useBreakpointIndex } from '@theme-ui/match-media';
+import { alpha } from '@theme-ui/color';
+import { Slider } from '@carbonplan/components';
 
-import Info from '../view/info'
-import useStore from '../store/index'
+import { Info } from '../view/index';
+import { useStore } from '../store/index';
 
 export default function Settings() {
-  const isWide = useBreakpointIndex() > 0
+  const isWide = useBreakpointIndex() > 0;
 
-  const setVariable = useStore((state) => state.setVariable)
-  const confidenceArray = useStore((state) => state.confidenceArray)
-  const setConfidence = useStore((state) => state.setConfidence)
-  const variableIdx = useStore((state) => state.variableIdx)
-  const setVariableIdx = useStore((state) => state.setVariableIdx)
-  const confidenceIdx = useStore((state) => state.confidenceIdx)
-  const setConfidenceIdx = useStore((state) => state.setConfidenceIdx)
-  const setTime = useStore((state) => state.setTime)
-  const dates = useStore((state) => state.dates)
-  const sliderIndex = useStore((state) => state.sliderIndex)
-  const setSliderIndex = useStore((state) => state.setSliderIndex)
-  const setSliding = useStore((state) => state.setSliding)
+  // shared variables
+  const setVariable = useStore((state) => state.setVariable);
+  const variableIdx = useStore((state) => state.variableIdx);
+  const setVariableIdx = useStore((state) => state.setVariableIdx);
+  const timePeriod = useStore((state) => state.timePeriod);
+  const setSliding = useStore((state) => state.setSliding);
+
+  // forecast
+  const confidenceArray = useStore((state) => state.confidenceArray);
+  const setConfidence = useStore((state) => state.setConfidence);
+  const confidenceIdx = useStore((state) => state.confidenceIdx);
+  const setConfidenceIdx = useStore((state) => state.setConfidenceIdx);
+  const forecastDates = useStore((state) => state.forecastDates);
+  const setForecastDate = useStore((state) => state.setForecastDate);
+  const forecastSliderIndex = useStore((state) => state.forecastSliderIndex);
+  const setForecastSliderIndex = useStore((state) => state.setForecastSliderIndex);
+
+  // historical
+  const historicalDates = useStore((state) => state.historicalDates);
+  const setHistoricalDate = useStore((state) => state.setHistoricalDate);
+  const historicalSliderIndex = useStore((state) => state.historicalSliderIndex);
+  const setHistoricalSliderIndex = useStore((state) => state.setHistoricalSliderIndex);
 
   const sx = {
     'settings-container': {
@@ -53,8 +63,8 @@ export default function Settings() {
     'data-source': {
       mt: 2,
     },
-    'button': {
-      alignContent: 'center', 
+    button: {
+      alignContent: 'center',
       justifyContent: 'center',
       textAlign: 'center',
       borderRightWidth: '1px',
@@ -79,129 +89,152 @@ export default function Settings() {
       },
     },
     'confidence-container': {
-        gridTemplateColumns: 'repeat(5, 1fr)',
-        '&:hover > .confidence-level': {
-          cursor: 'pointer',
-        },
+      gridTemplateColumns: 'repeat(5, 1fr)',
+      '&:hover > .confidence-level': {
+        cursor: 'pointer',
+      },
     },
-    'time-slider': { 
-      width: '100%', 
-      mt: 3, 
-      mb: 3    
+    'time-slider': {
+      width: '100%',
+      mt: 3,
+      mb: 3,
     },
     'slider-labels-container': {
       textAlign: 'center',
+      pb: timePeriod == 'forecast' ? 0 : 2,
     },
-  }
+  };
 
   const handleVariableChange = useCallback((event) => {
-    let newIdx = event.target.getAttribute('data-idx')
-    setVariableIdx(newIdx)
+    let newIdx = event.target.getAttribute('data-idx');
+    setVariableIdx(newIdx);
 
-    let variable = event.target.innerHTML == 'Water balance' ? 'percent' : event.target.innerHTML == 'Precipitation' ? 'precip' : null
+    let variable =
+      event.target.innerHTML == 'Percentiles'
+        ? 'percent'
+        : event.target.innerHTML == 'Monthly totals'
+          ? 'precip'
+          : null;
     if (variable != null) {
-      setVariable(variable)
+      setVariable(variable);
     }
-  })
+  });
 
   const handleConfidenceChange = useCallback((event) => {
-    let newIdx = event.target.getAttribute('data-idx')
-    setConfidenceIdx(newIdx)
+    let newIdx = event.target.getAttribute('data-idx');
+    setConfidenceIdx(newIdx);
 
-    let confidence = String(event.target.innerHTML).replace('%', '')
+    let confidence = String(event.target.innerHTML).replace('%', '');
     if (confidenceArray.includes(confidence)) {
-      setConfidence(confidence)
+      setConfidence(confidence);
     }
-  })
+  });
 
-  let variableLabels = ['Water balance', 'Precipitation']
+  let variableLabels = ['Percentiles', 'Monthly totals'];
   let variableOptions = variableLabels.map((label, idx) => {
     return (
-      <Box 
-        as='div'
+      <Box
+        as="div"
         key={idx}
         data-idx={idx}
-        role='button'
-        className='var-selection'
+        role="button"
+        className="var-selection"
         onClick={handleVariableChange}
-        sx={{...sx['button'], bg: (idx == variableIdx) ? alpha('muted', 0.5) : 'background' }} 
+        sx={{ ...sx['button'], bg: idx == variableIdx ? alpha('muted', 0.5) : 'background' }}
       >
         {label}
       </Box>
-    )
-  })
+    );
+  });
 
-  let confidenceLabels = ['5%', '20%', '50%', '80%', '95%']
+  let confidenceLabels = ['5%', '20%', '50%', '80%', '95%'];
   let confidenceOptions = confidenceLabels.map((label, idx) => {
     return (
-      <Box 
-        as='div'
+      <Box
+        as="div"
         key={idx}
         data-idx={idx}
-        role='button'
-        className='confidence-selection'
+        role="button"
+        className="confidence-selection"
         onClick={handleConfidenceChange}
-        sx={{...sx['button'], bg: (idx == confidenceIdx) ? alpha('muted', 0.5) : 'background' }} 
+        sx={{ ...sx['button'], bg: idx == confidenceIdx ? alpha('muted', 0.5) : 'background' }}
       >
         {label}
       </Box>
-    )
-  })
+    );
+  });
 
   const handleMouseDown = useCallback(() => {
-    setSliding(true)
-  }, [sliderIndex])
+    setSliding(true);
+  }, [forecastSliderIndex, historicalSliderIndex]);
 
   const handleMouseUp = useCallback(() => {
-    setSliding(false)
-  }, [sliderIndex])
+    setSliding(false);
+  }, [forecastSliderIndex, historicalSliderIndex]);
 
   useEffect(() => {
-    setTime(dates[sliderIndex])
-  }, [sliderIndex])
+    setForecastDate(forecastDates[forecastSliderIndex]);
+  }, [forecastSliderIndex]);
+
+  useEffect(() => {
+    setHistoricalDate(historicalDates[historicalSliderIndex]);
+  }, [historicalSliderIndex]);
 
   return (
     <>
       <Box sx={sx['settings-container']}>
-        <Box sx={{ mt: -3 }} id='var-container'>
-          <Box as='div' sx={sx.title} id='var-title'>
-            Layers <Info>Select either percentile or precipitation.</Info>
+        <Box sx={{ mt: -3 }} id="var-container">
+          <Box as="div" sx={sx.title} id="var-title">
+            Layers <Info>View precipitation either as a percentile (%) or monthly total (mm).</Info>
           </Box>
 
-          <Box 
-              as='div'
-              id={'variable-container'}
-              sx={{...sx['options-container'], ...sx['variable-container']}}
-            >
-              {variableOptions}
+          <Box
+            as="div"
+            id={'variable-container'}
+            sx={{ ...sx['options-container'], ...sx['variable-container'] }}
+          >
+            {variableOptions}
           </Box>
 
-          <Box id='confidence-layers'>
-            <Box as='div' sx={sx.title} id='confidence-title'>
-              Confidence level <Info>Select a confidence level to view.</Info>
+          {timePeriod == 'forecast' && (
+            <Box id="confidence-layers">
+              <Box as="div" sx={sx.title} id="confidence-title">
+                Confidence level <Info>Select a confidence level to view.</Info>
+              </Box>
+
+              <Box
+                as="div"
+                id={'confidence-level-container'}
+                sx={{ ...sx['options-container'], ...sx['confidence-container'] }}
+              >
+                {confidenceOptions}
+              </Box>
+            </Box>
+          )}
+
+          <Box id="time-slider-container">
+            <Box sx={{ ...sx.title, mb: [2] }}>
+              {timePeriod == 'forecast'
+                ? `Forecast date: ${forecastDates[forecastSliderIndex]}`
+                : `Date: ${historicalDates[historicalSliderIndex]}`}
             </Box>
 
-            <Box 
-              as='div'
-              id={'confidence-level-container'}
-              sx={{...sx['options-container'], ...sx['confidence-container']}}
-            >
-              {confidenceOptions}
-            </Box>
-          </Box>
+            {timePeriod == 'forecast' && <Box sx={sx.subtitle}>Months into future:</Box>}
 
-          <Box id='time-slider-container'>
-            <Box sx={{...sx.title, mb: [2]}}>Forecast date: {dates[sliderIndex]}</Box>
-            <Box sx={sx.subtitle}>Months into future:</Box>
             <Slider
+              key={timePeriod}
               id={'time-slider'}
               sx={sx['time-slider']}
-              value={sliderIndex}
-              onChange={(e) => setSliderIndex(e.target.value)}
+              value={timePeriod == 'forecast' ? forecastSliderIndex : historicalSliderIndex}
+              onChange={(e) =>
+                timePeriod == 'forecast'
+                  ? setForecastSliderIndex(e.target.value)
+                  : setHistoricalSliderIndex(e.target.value)
+              }
               onMouseDown={handleMouseDown}
               onMouseUp={handleMouseUp}
               min={0}
-              max={5}
+              max={timePeriod == 'forecast' ? forecastDates.length - 1 : historicalDates.length - 1}
               step={1}
             />
 
@@ -212,20 +245,24 @@ export default function Settings() {
                   float: 'left',
                 }}
               >
-                0
+                {timePeriod == 'forecast'
+                  ? 0
+                  : new Date(historicalDates.at(0) + 'T00:00:00').getFullYear()}
               </Box>
 
-              <Box
-                sx={{
-                  display: 'inline-block',
-                  ml: 'auto',
-                  mr: 'auto',
-                  color: 'secondary',
-                  transition: '0.2s',
-                }}
-              >
-                {sliderIndex}
-              </Box>
+              {timePeriod == 'forecast' && (
+                <Box
+                  sx={{
+                    display: 'inline-block',
+                    ml: 'auto',
+                    mr: 'auto',
+                    color: 'secondary',
+                    transition: '0.2s',
+                  }}
+                >
+                  {forecastSliderIndex}
+                </Box>
+              )}
 
               <Box
                 sx={{
@@ -233,14 +270,43 @@ export default function Settings() {
                   display: 'inline-block',
                 }}
               >
-                5
+                {timePeriod == 'forecast'
+                  ? forecastDates.length - 1
+                  : new Date(historicalDates.at(-1) + 'T00:00:00').getFullYear()}
               </Box>
             </Box>
-          </Box>
 
+            {timePeriod == 'historical' && (
+              <Box
+                sx={{
+                  ...sx.title,
+                  display: 'flex',
+                  height: '2rem',
+                  mb: 0,
+                }}
+              >
+                Jump to:
+                <Input
+                  sx={{ width: '30%' }}
+                  type={'number'}
+                  min={1}
+                  max={12}
+                  step={1}
+                  defaultValue={2}
+                />
+                <Input
+                  sx={{ width: '30%' }}
+                  type={'number'}
+                  min={1991}
+                  max={2026}
+                  step={1}
+                  defaultValue={2026}
+                />
+              </Box>
+            )}
+          </Box>
         </Box>
       </Box>
-
     </>
-  )
+  );
 }

@@ -1,7 +1,4 @@
-import ChartIcon from './chart-icon'
-import MenuIcon from './menu-icon'
+import ChartIcon from './chart-icon';
+import MenuIcon from './menu-icon';
 
-export {
-    ChartIcon,
-    MenuIcon
-  }
+export { ChartIcon, MenuIcon };

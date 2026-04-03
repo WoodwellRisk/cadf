@@ -1,5 +1,3 @@
-import Colorbar from './colorbar-container'
+import Colorbar from './colorbar-container';
 
-export {
-  Colorbar,
-}
+export { Colorbar };

@@ -1,7 +1,4 @@
-import DesktopSettings from './settings-desktop'
-import MobileSettings from './settings-mobile'
+import DesktopSettings from './settings-desktop';
+import MobileSettings from './settings-mobile';
 
-export {
-    DesktopSettings,
-    MobileSettings,
-}
+export { DesktopSettings, MobileSettings };
