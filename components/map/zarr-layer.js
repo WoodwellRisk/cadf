@@ -26,7 +26,7 @@ const ZarrLayer = ({ id, source, variable, opacity }) => {
   }, [zoom]);
 
   const customFrag = `
-    const float TILE_SIZE = 256.0;
+    const float TILE_SIZE = 128.0;
 
     uniform float u_zoom;
     const float ZOOM_THRESHOLD = 4.5;
@@ -111,8 +111,8 @@ const ZarrLayer = ({ id, source, variable, opacity }) => {
       opacity: opacity,
       selector: { variable: variable, time: historicalDate },
       uniforms: { u_zoom: zoom },
-      // customFrag: customFrag,
-      customFrag: '',
+      customFrag: customFrag,
+      // customFrag: '',
     });
     map.addLayer(zarrLayer);
     zarrLayerRef.current = zarrLayer;
