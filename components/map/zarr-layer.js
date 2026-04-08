@@ -111,7 +111,8 @@ const ZarrLayer = ({ id, source, variable, opacity }) => {
       opacity: opacity,
       selector: { variable: variable, time: historicalDate },
       uniforms: { u_zoom: zoom },
-      customFrag: customFrag,
+      // customFrag: customFrag,
+      customFrag: '',
     });
     map.addLayer(zarrLayer);
     zarrLayerRef.current = zarrLayer;

@@ -4,9 +4,9 @@ const MIN_HISTORICAL_DATE = '1991-01-01';
 const MAX_HISTORICAL_DATE = '2026-02-01';
 const INITIAL_FORECAST_DATE = '2025-10-01';
 
-const range = (start, end) => {
+export const arrayRange = (start, end, step) => {
   let output = [];
-  for (let idx = start; idx < end; idx++) {
+  for (let idx = start; idx < end; idx += step) {
     output.push(idx);
   }
   return output;
@@ -47,7 +47,7 @@ const getDifferenceInMonths = (startDateString, endDateString) => {
 
 const createForecastDates = () => {
   let forecastDate = INITIAL_FORECAST_DATE;
-  let monthsRange = range(0, 6);
+  let monthsRange = arrayRange(0, 6, 1);
 
   return {
     forecastDate: forecastDate,
@@ -61,7 +61,7 @@ const createHistoricalDates = () => {
   let minDate = MIN_HISTORICAL_DATE;
   let maxDate = MAX_HISTORICAL_DATE;
   let monthsBetweenDates = getDifferenceInMonths(minDate, maxDate);
-  let monthsRange = range(0, monthsBetweenDates);
+  let monthsRange = arrayRange(0, monthsBetweenDates, 1);
 
   return {
     maxHistoricalDate: maxDate,

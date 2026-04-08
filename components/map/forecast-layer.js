@@ -2,8 +2,8 @@ import { useEffect, useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 
 import { useMap } from './map-provider';
-import { arrayRange, updatePaintProperty } from './utils';
-import { useStore } from '../store/index';
+import { updatePaintProperty } from './utils';
+import { arrayRange, useStore } from '../store/index';
 
 const ForecastLayer = ({
   id,

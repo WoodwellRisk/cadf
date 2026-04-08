@@ -117,6 +117,14 @@ button[role='checkbox'] {
   overflow-y: auto;
 }
 
+select + svg {
+  display: none;
+}
+
+/* .skip-select {
+  padding: 1rem 2rem;
+} */
+
 #settings-options-mobile {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -161,4 +169,8 @@ div.maplibregl-ctrl-bottom-right {
   /* bottom: 2.5rem; */
   right: 2.5rem;
   bottom: 0.15rem;
+}
+
+summary.maplibregl-ctrl-attrib-button {
+  outline: 1px solid black;
 }

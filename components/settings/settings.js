@@ -1,11 +1,10 @@
-import { useCallback, useEffect } from 'react';
-import { Box, Input } from 'theme-ui';
+import { useState, useCallback, useEffect } from 'react';
+import { Box, Button, Input, Select, Slider, Text } from 'theme-ui';
 import { useBreakpointIndex } from '@theme-ui/match-media';
 import { alpha } from '@theme-ui/color';
-import { Slider } from '@carbonplan/components';
 
 import { Info } from '../view/index';
-import { useStore } from '../store/index';
+import { arrayRange, useStore } from '../store/index';
 
 export default function Settings() {
   const isWide = useBreakpointIndex() > 0;
@@ -28,10 +27,23 @@ export default function Settings() {
   const setForecastSliderIndex = useStore((state) => state.setForecastSliderIndex);
 
   // historical
+  const maxHistoricalDate = useStore((state) => state.maxHistoricalDate);
   const historicalDates = useStore((state) => state.historicalDates);
   const setHistoricalDate = useStore((state) => state.setHistoricalDate);
   const historicalSliderIndex = useStore((state) => state.historicalSliderIndex);
   const setHistoricalSliderIndex = useStore((state) => state.setHistoricalSliderIndex);
+
+  const validMonths = arrayRange(1, 12, 1)
+    .map(String)
+    .map((val) => val.padStart(2, '0'));
+  const validYears = arrayRange(1991, 2026, 1).map(String);
+
+  const [defaultSkipYear, defaultSkipMonth, _] = maxHistoricalDate.split('-');
+  const [skipMonth, setSkipMonth] = useState(defaultSkipMonth);
+  const [skipYear, setSkipYear] = useState(defaultSkipYear);
+  const [showTimeError, setShowTimeError] = useState(false);
+
+  console.log(skipMonth, skipYear);
 
   const sx = {
     'settings-container': {
@@ -43,7 +55,8 @@ export default function Settings() {
     title: {
       mt: [4],
       mb: [1],
-      justifyContent: 'space-between',
+      justifyContent: isWide ? 'space-between' : 'flex-start',
+      gap: isWide ? 0 : 4,
       alignItems: 'center',
       alignText: 'center',
       fontSize: isWide ? 2 : 1,
@@ -180,6 +193,16 @@ export default function Settings() {
     setHistoricalDate(historicalDates[historicalSliderIndex]);
   }, [historicalSliderIndex]);
 
+  const handleSkipClick = useCallback(() => {
+    let tempSliderIndex = historicalDates.indexOf(`${skipYear}-${skipMonth}-01`);
+    if (tempSliderIndex != -1) {
+      setShowTimeError(false);
+      setHistoricalSliderIndex(tempSliderIndex);
+    } else {
+      setShowTimeError(true);
+    }
+  });
+
   return (
     <>
       <Box sx={sx['settings-container']}>
@@ -285,23 +308,152 @@ export default function Settings() {
                   mb: 0,
                 }}
               >
-                Jump to:
-                <Input
+                <Text sx={{ fontSize: 1 }}>Jump to:</Text>
+                {/* <Input
                   sx={{ width: '30%' }}
                   type={'number'}
                   min={1}
                   max={12}
                   step={1}
                   defaultValue={2}
+                /> */}
+
+                {/* <Input
+                  sx={{ width: '20%' }}
+                  type={'text'}
+                  id={'month-skip-input'}
+                  name={'month-input'}
+                  list={'months-list'}
+                  onChange={(e) => setSkipMonth(e.target.value.padStart(2, '0'))}
+                  // placeholder={skipMonth}
                 />
-                <Input
-                  sx={{ width: '30%' }}
-                  type={'number'}
-                  min={1991}
-                  max={2026}
-                  step={1}
-                  defaultValue={2026}
+                <datalist id='months-list'>
+                  {validMonths.map((y, idx) => {
+                    return <option key={idx} value={y} />
+                  })}
+                </datalist> */}
+
+                {/* <Input
+                  sx={{ width: '25%' }}
+                  type={'text'}
+                  id={'year-skip-input'}
+                  name={'year-input'}
+                  list={'years-list'}
+                  onChange={(e) => setSkipYear(e.target.value)}
+                  // placeholder={skipYear}
                 />
+                <datalist id='years-list'>
+                  {validYears.map((y, idx) => {
+                    return <option key={idx} value={y} />
+                  })}
+                </datalist> */}
+
+                <Select
+                  id={'month-skip-select'}
+                  className={'skip-select'}
+                  sx={{ height: '100%', px: 3 }}
+                  onChange={(e) => setSkipMonth(e.target.value)}
+                >
+                  {validMonths.map((month, idx) => {
+                    if (month == defaultSkipMonth) {
+                      return (
+                        <option key={idx} value={month} selected>
+                          {month}
+                        </option>
+                      );
+                    } else {
+                      return (
+                        <option key={idx} value={month}>
+                          {month}
+                        </option>
+                      );
+                    }
+                  })}
+                </Select>
+
+                <Select
+                  id={'year-skip-select'}
+                  className={'skip-select'}
+                  sx={{ height: '100%', px: 3 }}
+                  onChange={(e) => setSkipYear(e.target.value)}
+                >
+                  {validYears.map((year, idx) => {
+                    if (year == defaultSkipYear) {
+                      return (
+                        <option key={idx} value={year} selected>
+                          {year}
+                        </option>
+                      );
+                    } else {
+                      return (
+                        <option key={idx} value={year}>
+                          {year}
+                        </option>
+                      );
+                    }
+                  })}
+                </Select>
+
+                <Button
+                  onClick={handleSkipClick}
+                  sx={{
+                    color: 'secondary',
+                    bg: 'background',
+                    outlineWidth: '1px',
+                    outlineStyle: 'solid',
+                    outlineColor: 'secondary',
+                    letterSpacing: 'smallcaps',
+                    textTransform: 'uppercase',
+                    '&:hover': {
+                      color: 'primary',
+                      bg: alpha('muted', 0.5),
+                      outlineWidth: '1px',
+                      outlineStyle: 'solid',
+                      outlineColor: 'primary',
+                    },
+                    '&:active': {
+                      color: 'background',
+                      bg: 'primary',
+                      outlineWidth: '1px',
+                      outlineStyle: 'solid',
+                      outlineColor: 'primary',
+                    },
+                    '&:focus:not(:active)': {
+                      color: 'primary',
+                      bg: alpha('muted', 0.5),
+                      outlineWidth: '1px',
+                      outlineStyle: 'solid',
+                      outlineColor: 'primary',
+                    },
+                    '&:focus:not(:hover)': {
+                      color: 'secondary',
+                      bg: 'background',
+                      outlineWidth: '1px',
+                      outlineStyle: 'solid',
+                      outlineColor: 'secondary',
+                    },
+                  }}
+                >
+                  <Text>go</Text>
+                </Button>
+              </Box>
+            )}
+
+            {showTimeError && (
+              <Box
+                sx={{
+                  color: 'red',
+                  outlineWidth: '1px',
+                  outlineStyle: 'solid',
+                  outlineColor: 'red',
+                  mt: 4,
+                  py: 2,
+                  textAlign: 'center',
+                }}
+              >
+                <Text sx={{ fontSize: '15px', mx: 2 }}>
+                  Select a time less than: {maxHistoricalDate}
+                </Text>
               </Box>
             )}
           </Box>
