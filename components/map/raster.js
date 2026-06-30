@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { makeColormap } from '@carbonplan/colormaps';
-import { ZarrLayer as ZarrDataLayer } from '@carbonplan/zarr-layer';
+import { ZarrLayer } from '@carbonplan/zarr-layer';
 import { useMap } from './map-provider';
 import { useMapView } from './use-map-view';
 import { useStore } from '../store/index';
 
-const ZarrLayer = ({ id, source, variable, opacity }) => {
+const Raster = ({ id, source, variable }) => {
   const zarrLayerRef = useRef(null);
   const removed = useRef(false);
   const { map } = useMap();
@@ -16,6 +16,8 @@ const ZarrLayer = ({ id, source, variable, opacity }) => {
   // const colormap = useStore(state => state.colormap)()
   const historicalDate = useStore((state) => state.historicalDate);
   // const timePeriod = useStore(state => state.timePeriod)
+  const showStatesLayer = useStore((state) => state.showStatesLayer);
+  const showCountriesLayer = useStore((state) => state.showCountriesLayer);
 
   useEffect(() => {
     if (!zarrLayerRef.current) return;
@@ -99,7 +101,7 @@ const ZarrLayer = ({ id, source, variable, opacity }) => {
   useEffect(() => {
     if (!map) return;
 
-    const zarrLayer = new ZarrDataLayer({
+    const zarrLayer = new ZarrLayer({
       id: id || 'zarr-layer',
       source: source,
       zarrVersion: 2,
@@ -108,17 +110,39 @@ const ZarrLayer = ({ id, source, variable, opacity }) => {
       clim: [0, 1],
       // colormap: colormap,
       colormap: makeColormap('redteal', { mode: 'light', count: 255 }),
-      opacity: opacity,
+      opacity: 1,
       selector: { variable: variable, time: historicalDate },
       uniforms: { u_zoom: zoom },
-      customFrag: customFrag,
-      // customFrag: '',
+      // customFrag: customFrag,
+      customFrag: '',
     });
     map.addLayer(zarrLayer);
     zarrLayerRef.current = zarrLayer;
 
+    let layers = map.getStyle().layers;
+    let ocean = layers.find((layer) => layer.source == 'ocean');
+    let land = layers.find((layer) => layer.source == 'land');
+    let lakesFill = layers.find((layer) => layer.source == 'lakes-fill');
+    let lakes = layers.find((layer) => layer.source == 'lakes');
+    let states = showStatesLayer ? layers.find((layer) => layer.source == 'states') : undefined;
+    let countries = showCountriesLayer
+      ? layers.find((layer) => layer.source == 'countries')
+      : undefined;
+
+    map.moveLayer(ocean.id, land.id);
+    map.moveLayer(lakes.id, ocean.id);
+    map.moveLayer(lakesFill.id, lakes.id);
+    map.moveLayer(id || 'raster', lakesFill.id);
+
+    if (states) map.moveLayer(states.id, land.id);
+    if (countries) map.moveLayer(countries.id, states?.id || land.id);
+
+    if (states && countries) {
+      map.moveLayer(states.id, countries.id);
+    }
+
     return () => {
-      let layerId = id || 'zarr-layer';
+      let layerId = id || 'raster';
       if (map.getLayer(layerId)) map.removeLayer(layerId);
     };
   }, [map, id]);
@@ -140,14 +164,14 @@ const ZarrLayer = ({ id, source, variable, opacity }) => {
     layer.setSelector({ variable: variable, time: historicalDate });
   }, [map, variable]);
 
-  useEffect(() => {
-    if (!map || !zarrLayerRef.current) return;
-    let layer = zarrLayerRef.current;
+  // useEffect(() => {
+  //   if (!map || !zarrLayerRef.current) return;
+  //   let layer = zarrLayerRef.current;
 
-    layer.setOpacity(opacity);
-  }, [map, opacity]);
+  //   layer.setOpacity(opacity);
+  // }, [map, opacity]);
 
   return null;
 };
 
-export default ZarrLayer;
+export default Raster;

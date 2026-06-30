@@ -32,18 +32,17 @@ export default function Settings() {
   const setHistoricalDate = useStore((state) => state.setHistoricalDate);
   const historicalSliderIndex = useStore((state) => state.historicalSliderIndex);
   const setHistoricalSliderIndex = useStore((state) => state.setHistoricalSliderIndex);
+  const showTimeError = useStore((state) => state.showTimeError);
+  const setShowTimeError = useStore((state) => state.setShowTimeError);
 
   const validMonths = arrayRange(1, 12, 1)
     .map(String)
     .map((val) => val.padStart(2, '0'));
-  const validYears = arrayRange(1991, 2026, 1).map(String);
+  const validYears = arrayRange(1991, 2027, 1).map(String);
 
   const [defaultSkipYear, defaultSkipMonth, _] = maxHistoricalDate.split('-');
   const [skipMonth, setSkipMonth] = useState(defaultSkipMonth);
   const [skipYear, setSkipYear] = useState(defaultSkipYear);
-  const [showTimeError, setShowTimeError] = useState(false);
-
-  console.log(skipMonth, skipYear);
 
   const sx = {
     'settings-container': {

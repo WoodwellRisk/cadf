@@ -56,7 +56,7 @@ export default function Header() {
           /> 
         */}
 
-        {/* <Select
+        <Select
           id={'time-period-selector'}
           sx={{
             width: '7rem',
@@ -66,8 +66,10 @@ export default function Header() {
           onChange={(e) => setTimePeriod(e.target.value)}
         >
           <option value="historical">Historical</option>
-          <option value="forecast">Forecast</option>
-        </Select> */}
+          <option value="forecast" selected>
+            Forecast
+          </option>
+        </Select>
 
         <IconButton
           key="charts"

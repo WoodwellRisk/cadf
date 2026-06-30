@@ -7,7 +7,8 @@ import Basemap from './basemap';
 import Fill from './fill';
 import Line from './line';
 import ForecastLayer from './forecast-layer';
-import ZarrLayer from './zarr-layer';
+import Raster from './raster';
+import Router from './router';
 import ZoomReset from './zoom-reset';
 import LayerOrder from './layer-order';
 import { useStore } from '../store/index';
@@ -25,10 +26,10 @@ export const Map = () => {
   const forecastDate = useStore((state) => state.forecastDate);
   const maxHistoricalDate = useStore((state) => state.maxHistoricalDate);
 
-  const showLandOutline = useStore((state) => state.showLandOutline);
-  const showLakes = useStore((state) => state.showLakes);
-  const showCountriesOutline = useStore((state) => state.showCountriesOutline);
-  const showStatesOutline = useStore((state) => state.showStatesOutline);
+  const showLandLayer = useStore((state) => state.showLandLayer);
+  const showLakesLayer = useStore((state) => state.showLakesLayer);
+  const showCountriesLayer = useStore((state) => state.showCountriesLayer);
+  const showStatesLayer = useStore((state) => state.showStatesLayer);
   const showCharts = useStore((store) => store.showCharts);
 
   useEffect(() => {
@@ -39,24 +40,6 @@ export const Map = () => {
   return (
     <MapProvider>
       <Basemap />
-
-      {/* <ZarrLayer
-        id={'historical'}
-        source={`https://storage.googleapis.com/drought-monitor/zarr/viz/h3-${maxHistoricalDate}.zarr`}
-        variable={band}
-        opacity={opacity}
-      /> */}
-
-      <ForecastLayer
-        key={`${variable}-${confidence}-${opacity}`}
-        id={'forecast'}
-        source={'https://storage.googleapis.com/cadf/vector'}
-        band={band}
-        time={forecastDate}
-        showCharts={showCharts}
-        borderColor={theme.rawColors.secondary}
-        opacity={Number(!opacity)}
-      />
 
       {/* {showCharts && (
         <PointQuery key={`point-query-${showCharts}`} />
@@ -76,17 +59,17 @@ export const Map = () => {
         variable={'land'}
       /> */}
 
-      {showCountriesOutline && (
+      {showCountriesLayer && (
         <Line
           id={'countries'}
           color={theme.rawColors.primary}
           source={'https://storage.googleapis.com/cadf/vector/countries'}
           variable={'countries'}
-          width={showStatesOutline && zoom > 2.5 ? 1.5 : 1}
+          width={showStatesLayer && zoom > 2.5 ? 1.5 : 1}
         />
       )}
 
-      {showStatesOutline && (
+      {showStatesLayer && (
         <Line
           id={'states'}
           color={theme.rawColors.secondary}
@@ -96,26 +79,26 @@ export const Map = () => {
         />
       )}
 
-      {showLakes && (
-        <Fill
-          id={'lakes-fill'}
-          color={theme.rawColors.background}
-          source={'https://storage.googleapis.com/cadf/vector/lakes'}
-          variable={'lakes'}
-        />
+      {showLakesLayer && (
+        <>
+          <Fill
+            id={'lakes-fill'}
+            color={theme.rawColors.background}
+            source={'https://storage.googleapis.com/cadf/vector/lakes'}
+            variable={'lakes'}
+          />
+
+          <Line
+            id={'lakes'}
+            color={theme.rawColors.primary}
+            source={'https://storage.googleapis.com/cadf/vector/lakes'}
+            variable={'lakes'}
+            width={1}
+          />
+        </>
       )}
 
-      {showLakes && (
-        <Line
-          id={'lakes'}
-          color={theme.rawColors.primary}
-          source={'https://storage.googleapis.com/cadf/vector/lakes'}
-          variable={'lakes'}
-          width={1}
-        />
-      )}
-
-      {showLandOutline && (
+      {showLandLayer && (
         <Line
           id={'land'}
           color={theme.rawColors.primary}
@@ -124,6 +107,25 @@ export const Map = () => {
           width={1}
         />
       )}
+
+      {/* <Raster
+        id={'historical'}
+        source={`https://storage.googleapis.com/water-balance/zarr/viz/wb-h3-${maxHistoricalDate}.zarr`}
+        variable={band}
+      /> */}
+
+      <ForecastLayer
+        key={`${variable}-${confidence}-${opacity}`}
+        id={'forecast'}
+        source={'https://storage.googleapis.com/cadf/vector'}
+        band={band}
+        time={forecastDate}
+        showCharts={showCharts}
+        borderColor={theme.rawColors.secondary}
+        opacity={Number(!opacity)}
+      />
+
+      <Router />
 
       <ZoomReset />
 

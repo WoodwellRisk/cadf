@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 
 const MIN_HISTORICAL_DATE = '1991-01-01';
-const MAX_HISTORICAL_DATE = '2026-02-01';
+const MAX_HISTORICAL_DATE = '2026-05-01';
 const INITIAL_FORECAST_DATE = '2025-10-01';
 
 export const arrayRange = (start, end, step) => {
@@ -94,9 +94,15 @@ export const useStore = create((set, get) => ({
   variable: 'percent',
   setVariable: (variable) => set({ variable }),
 
+  variableIdx: 0,
+  setVariableIdx: (variableIdx) => set({ variableIdx }),
+
   confidenceArray: ['5', '20', '50', '80', '95'],
   confidence: '50',
   setConfidence: (confidence) => set({ confidence }),
+
+  confidenceIdx: 2,
+  setConfidenceIdx: (confidenceIdx) => set({ confidenceIdx }),
 
   band: () => {
     const { variable, timePeriod, confidence } = get();
@@ -116,6 +122,20 @@ export const useStore = create((set, get) => ({
   ...createHistoricalDates(),
   setHistoricalDate: (historicalDate) => set({ historicalDate }),
   setHistoricalSliderIndex: (historicalSliderIndex) => set({ historicalSliderIndex }),
+
+  timePeriodOptions: { historical: false, forecast: true },
+  timePeriod: 'forecast',
+  setTimePeriodOptions: (newOptions) => {
+    const timePeriod = Object.keys(newOptions).find((key) => newOptions[key] === true);
+    set({
+      timePeriodOptions: newOptions,
+      timePeriod: timePeriod,
+    });
+  },
+  setTimePeriod: (timePeriod) => set({ timePeriod }),
+
+  showTimeError: false,
+  setShowTimeError: (showTimeError) => set({ showTimeError }),
 
   gintoUri: null,
   setGintoUri: (gintoUri) => set({ gintoUri }),
@@ -210,17 +230,6 @@ export const useStore = create((set, get) => ({
     return [climRanges[variable].min, climRanges[variable].max];
   },
 
-  timePeriodOptions: { historical: false, forecast: true },
-  timePeriod: 'forecast',
-  setTimePeriodOptions: (newOptions) => {
-    const timePeriod = Object.keys(newOptions).find((key) => newOptions[key] === true);
-    set({
-      timePeriodOptions: newOptions,
-      timePeriod: timePeriod,
-    });
-  },
-  setTimePeriod: (timePeriod) => set({ timePeriod }),
-
   showCharts: false,
   setShowCharts: (showCharts) => set({ showCharts }),
 
@@ -230,26 +239,20 @@ export const useStore = create((set, get) => ({
   plotData: {},
   setPlotData: (plotData) => set({ plotData }),
 
-  showLandOutline: true,
-  setShowLandOutline: (showLandOutline) => set({ showLandOutline }),
+  showLandLayer: true,
+  setShowLandLayer: (showLandLayer) => set({ showLandLayer }),
 
-  showCountriesOutline: true,
-  setShowCountriesOutline: (showCountriesOutline) => set({ showCountriesOutline }),
+  showCountriesLayer: true,
+  setShowCountriesLayer: (showCountriesLayer) => set({ showCountriesLayer }),
 
-  showStatesOutline: false,
-  setShowStatesOutline: (showStatesOutline) => set({ showStatesOutline }),
+  showStatesLayer: false,
+  setShowStatesLayer: (showStatesLayer) => set({ showStatesLayer }),
 
-  showLakes: true,
-  setShowLakes: (showLakes) => set({ showLakes }),
+  showLakesLayer: true,
+  setShowLakesLayer: (showLakesLayer) => set({ showLakesLayer }),
 
   sliding: false,
   setSliding: (sliding) => set({ sliding }),
-
-  variableIdx: 0,
-  setVariableIdx: (variableIdx) => set({ variableIdx }),
-
-  confidenceIdx: 2,
-  setConfidenceIdx: (confidenceIdx) => set({ confidenceIdx }),
 
   showSettings: false,
   setShowSettings: (showSettings) => set({ showSettings }),
@@ -259,9 +262,6 @@ export const useStore = create((set, get) => ({
 
   showMenu: false,
   setShowMenu: (showMenu) => set({ showMenu }),
-
-  showCharts: false,
-  setShowCharts: (showCharts) => set({ showCharts }),
 
   showOverlays: false,
   setShowOverlays: (showOverlays) => set({ showOverlays }),
