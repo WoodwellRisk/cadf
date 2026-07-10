@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { useThemeUI, Box } from 'theme-ui';
 import { useMap } from './map-provider';
-// import { circle as Circle, point } from '@turf/turf';
 import { v4 as uuidv4 } from 'uuid';
+
+import { useStore } from '../store/index';
 
 export default function PointQuery({ key, id }) {
   const { theme } = useThemeUI();
@@ -12,38 +13,39 @@ export default function PointQuery({ key, id }) {
   const sourceIdRef = useRef();
   const layerIdRef = useRef();
 
+  const variable = useStore((state) => state.variable);
+  const timePeriod = useStore((state) => state.timePeriod);
+  const historicalDates = useStore((state) => state.historicalDates);
+  const forecastDates = useStore((state) => state.forecastDates);
+  const historicalRaster = useStore((state) => state.historicalRaster);
+  const forecastRaster = useStore((state) => state.forecastRaster);
+
+  const queryPoint = map.getCenter();
+  const [coords, setCoords] = useState([queryPoint['lng'], queryPoint['lat']]);
+  const setPlotData = useStore((state) => state.setPlotData);
+
   function toFourDecimalPlaces(num) {
     return parseFloat(num.toFixed(4));
   }
 
-  const coords = map.getCenter();
-  const center = [coords['lng'], coords['lat']];
-
   const [coordinates, setCoordinates] = useState([
-    `Longitude: ${toFourDecimalPlaces(center[0])}`,
-    `Latitude: ${toFourDecimalPlaces(center[1])}`,
+    `Longitude: ${toFourDecimalPlaces(coords[0])}`,
+    `Latitude: ${toFourDecimalPlaces(coords[1])}`,
   ]);
 
   // https://docs.mapbox.com/mapbox-gl-js/example/drag-a-point/
   const draggablePoint = {
     type: 'FeatureCollection',
     features: [
-      // point(center)
       {
         type: 'Feature',
         geometry: {
           type: 'Point',
-          coordinates: center,
+          coordinates: coords,
         },
       },
     ],
   };
-  // const draggablePoint = Circle(center, 20, { units: 'kilometers' });
-  // const draggablePoint = point(center);
-  // console.log(draggablePoint)
-
-  // console.log(center)
-  // console.log()
 
   useEffect(() => {
     map.on('remove', () => {
@@ -52,15 +54,11 @@ export default function PointQuery({ key, id }) {
   }, []);
 
   useEffect(() => {
-    sourceIdRef.current = uuidv4();
+    sourceIdRef.current = id || uuidv4();
     const { current: sourceId } = sourceIdRef;
 
     if (!map.getSource(sourceId)) {
-      // const coords = map.getCenter()
-      // console.log([coords['lng'], coords['lat']])
-      // const center = [coords['lng'], coords['lat']]
-
-      // draggablePoint.features[0].geometry.coordinates = center;
+      draggablePoint.features[0].geometry.coordinates = coords;
 
       map.addSource(sourceId, {
         type: 'geojson',
@@ -80,19 +78,11 @@ export default function PointQuery({ key, id }) {
         type: 'circle',
         source: sourceId,
         paint: {
-          'circle-radius': [
-            // 'step', ['zoom'],
-            'interpolate',
-            ['linear'],
-            ['zoom'],
-            5,
-            10,
-            7,
-            20,
-          ],
+          'circle-radius': ['interpolate', ['linear'], ['zoom'], 5, 10, 7, 20],
           'circle-color': theme.rawColors.primary,
           'circle-stroke-width': 2,
           'circle-stroke-color': theme.rawColors.primary,
+          'circle-opacity': 0.5,
         },
       });
     }
@@ -108,6 +98,7 @@ export default function PointQuery({ key, id }) {
 
     function onUp(e) {
       const coords = e.lngLat;
+      setCoords([coords.lng, coords.lat]);
 
       setCoordinates([
         `Longitude: ${toFourDecimalPlaces(coords.lng)}`,
@@ -133,11 +124,11 @@ export default function PointQuery({ key, id }) {
       map.getCanvas().style.cursor = 'grab';
       map.on('mousemove', onMove);
       map.once('mouseup', onUp);
-      map.setPaintProperty(layerId, 'circle-opacity', 1.0);
+      map.setPaintProperty(layerId, 'circle-opacity', 0.5);
     });
 
     map.on('mousedown', layerId, (e) => {
-      map.setPaintProperty(layerId, 'circle-opacity', 0.5);
+      map.setPaintProperty(layerId, 'circle-opacity', 1.0);
 
       e.preventDefault();
 
@@ -162,29 +153,59 @@ export default function PointQuery({ key, id }) {
     };
   }, []);
 
+  useEffect(() => {
+    (async () => {
+      // if (!historicalRaster || !forecastRaster) return;
+      if (!forecastRaster) return;
+
+      // give the rasters time to load
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      // try {
+      //   const historicalResult = await historicalRaster.queryData(
+      //     { type: 'Point', coordinates: coords },
+      //     { time: historicalDates }
+      //   );
+      //   console.log(historicalResult);
+      // } catch (error) {
+      //   console.error('Error querying historical raster:', error);
+      // }
+
+      try {
+        const forecastQuery = await forecastRaster.queryData(
+          { type: 'Point', coordinates: coords },
+          { time: forecastDates }
+          // { variable: ['percent', 'precip']},
+        );
+        setPlotData(forecastQuery);
+      } catch (error) {
+        console.error('Error querying forecast raster:', error);
+      }
+    })();
+    // }, [historicalRaster, coords]);
+  }, [forecastRaster, coords]);
+
   return (
     <Box
       as="div"
       id={'coordinates-container'}
       sx={{
-        // width: '150px',
         borderColor: 'primary',
         borderStyle: 'solid',
         borderWidth: '1px',
-        borderRadius: '3px',
+        borderRadius: '0.2rem',
         color: '#fff',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
         zIndex: 10,
         position: 'absolute',
-        right: '0.5rem',
-        top: '21rem',
-        padding: '5px 10px',
+        right: [2],
+        bottom: [50],
+        padding: '0.3rem 0.7rem',
         margin: 0,
         display: coordinates ? 'block' : 'none',
         fontWeight: 'bold',
-        fontSize: '14px',
-        lineHeight: '18px',
-        borderRadius: '3px',
+        fontSize: '0.9rem',
+        lineHeight: '1.2rem',
       }}
     >
       {coordinates &&

@@ -6,8 +6,8 @@ import MapProvider from './map-provider';
 import Basemap from './basemap';
 import Fill from './fill';
 import Line from './line';
-import ForecastLayer from './forecast-layer';
 import Raster from './raster';
+import PointQuery from './point-query';
 import Router from './router';
 import ZoomReset from './zoom-reset';
 import LayerOrder from './layer-order';
@@ -20,11 +20,11 @@ export const Map = () => {
   const variable = useStore((state) => state.variable);
   const timePeriod = useStore((state) => state.timePeriod);
   const confidence = useStore((state) => state.confidence);
-  const band = useStore((state) => state.band)();
-  const opacity = useStore((store) => store.opacity);
-  const setOpacity = useStore((store) => store.setOpacity);
   const forecastDate = useStore((state) => state.forecastDate);
   const maxHistoricalDate = useStore((state) => state.maxHistoricalDate);
+
+  const setHistoricalRaster = useStore((state) => state.setHistoricalRaster);
+  const setForecastRaster = useStore((state) => state.setForecastRaster);
 
   const showLandLayer = useStore((state) => state.showLandLayer);
   const showLakesLayer = useStore((state) => state.showLakesLayer);
@@ -32,58 +32,29 @@ export const Map = () => {
   const showStatesLayer = useStore((state) => state.showStatesLayer);
   const showCharts = useStore((store) => store.showCharts);
 
-  useEffect(() => {
-    let opacity = timePeriod == 'historical' ? 1 : 0;
-    setOpacity(opacity);
-  }, [timePeriod]);
-
   return (
     <MapProvider>
       <Basemap />
 
-      {/* {showCharts && (
-        <PointQuery key={`point-query-${showCharts}`} />
-      )} */}
-
-      <Fill
-        id={'ocean'}
-        color={theme.rawColors.hinted}
-        source={'https://storage.googleapis.com/cadf/vector/ocean'}
-        variable={'ocean'}
-      />
-
-      {/* <Fill
-        id={'land'}
-        color={theme.rawColors.muted}
-        source={'https://storage.googleapis.com/cadf/vector/land'}
-        variable={'land'}
+      {/* <Raster
+        id={`historical-raster`}
+        source={`https://storage.googleapis.com/water-balance/zarr/viz/wb-h${window}-${maxHistoricalDate}.zarr`}
+        opacity={timePeriod == 'forecast' ? 0 : 1}
+        setRaster={setHistoricalRaster}
       /> */}
 
-      {showCountriesLayer && (
-        <Line
-          id={'countries'}
-          color={theme.rawColors.primary}
-          source={'https://storage.googleapis.com/cadf/vector/countries'}
-          variable={'countries'}
-          width={showStatesLayer && zoom > 2.5 ? 1.5 : 1}
-        />
-      )}
-
-      {showStatesLayer && (
-        <Line
-          id={'states'}
-          color={theme.rawColors.secondary}
-          source={'https://storage.googleapis.com/cadf/vector/states'}
-          variable={'states'}
-          width={zoom < 4 ? 0.5 : 1}
-        />
-      )}
+      <Raster
+        id={`forecast-raster`}
+        source={`https://storage.googleapis.com/cadf/zarr/viz/precip-f-2025-09-01.zarr`}
+        opacity={timePeriod == 'forecast' ? 1 : 0}
+        setRaster={setForecastRaster}
+      />
 
       {showLakesLayer && (
         <>
           <Fill
             id={'lakes-fill'}
-            color={theme.rawColors.background}
+            color={theme.rawColors.hinted}
             source={'https://storage.googleapis.com/cadf/vector/lakes'}
             variable={'lakes'}
           />
@@ -98,6 +69,33 @@ export const Map = () => {
         </>
       )}
 
+      <Fill
+        id={'ocean'}
+        color={theme.rawColors.hinted}
+        source={'https://storage.googleapis.com/cadf/vector/ocean'}
+        variable={'ocean'}
+      />
+
+      {showStatesLayer && (
+        <Line
+          id={'states'}
+          color={theme.rawColors.secondary}
+          source={'https://storage.googleapis.com/cadf/vector/states'}
+          variable={'states'}
+          width={zoom < 4 ? 0.5 : 1}
+        />
+      )}
+
+      {showCountriesLayer && (
+        <Line
+          id={'countries'}
+          color={theme.rawColors.primary}
+          source={'https://storage.googleapis.com/cadf/vector/countries'}
+          variable={'countries'}
+          width={showStatesLayer && zoom > 2.5 ? 1.5 : 1}
+        />
+      )}
+
       {showLandLayer && (
         <Line
           id={'land'}
@@ -108,22 +106,7 @@ export const Map = () => {
         />
       )}
 
-      {/* <Raster
-        id={'historical'}
-        source={`https://storage.googleapis.com/water-balance/zarr/viz/wb-h3-${maxHistoricalDate}.zarr`}
-        variable={band}
-      /> */}
-
-      <ForecastLayer
-        key={`${variable}-${confidence}-${opacity}`}
-        id={'forecast'}
-        source={'https://storage.googleapis.com/cadf/vector'}
-        band={band}
-        time={forecastDate}
-        showCharts={showCharts}
-        borderColor={theme.rawColors.secondary}
-        opacity={Number(!opacity)}
-      />
+      {showCharts && <PointQuery />}
 
       <Router />
 

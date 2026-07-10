@@ -18,8 +18,8 @@ export default function Header() {
   const showAbout = useStore((state) => state.showAbout);
   const setShowAbout = useStore((state) => state.setShowAbout);
   const timePeriod = useStore((state) => state.timePeriod);
-  const timePeriodOptions = useStore((state) => state.timePeriodOptions);
-  const setTimePeriodOptions = useStore((state) => state.setTimePeriodOptions);
+  // const timePeriodOptions = useStore((state) => state.timePeriodOptions);
+  // const setTimePeriodOptions = useStore((state) => state.setTimePeriodOptions);
   const setTimePeriod = useStore((state) => state.setTimePeriod);
   const showCharts = useStore((state) => state.showCharts);
   const setShowCharts = useStore((state) => state.setShowCharts);
@@ -30,6 +30,10 @@ export default function Header() {
       setPlotData({});
     }
   }, [showCharts]);
+
+  useEffect(() => {
+    console.log(timePeriod);
+  }, [timePeriod]);
 
   return (
     <Box as="div" id="header" sx={{ position: 'relative', bg: alpha('muted', 0.5) }}>
@@ -56,20 +60,19 @@ export default function Header() {
           /> 
         */}
 
-        <Select
+        {/* <Select
           id={'time-period-selector'}
           sx={{
             width: '7rem',
             p: ' 0.25rem 0.75rem',
             mr: '0.25rem',
           }}
+          defaultValue={'forecast'}
           onChange={(e) => setTimePeriod(e.target.value)}
         >
           <option value="historical">Historical</option>
-          <option value="forecast" selected>
-            Forecast
-          </option>
-        </Select>
+          <option value="forecast">Forecast</option>
+        </Select> */}
 
         <IconButton
           key="charts"

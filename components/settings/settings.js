@@ -13,32 +13,40 @@ export default function Settings() {
   const setVariable = useStore((state) => state.setVariable);
   const variableIdx = useStore((state) => state.variableIdx);
   const setVariableIdx = useStore((state) => state.setVariableIdx);
-  const timePeriod = useStore((state) => state.timePeriod);
   const setSliding = useStore((state) => state.setSliding);
-
-  // forecast
-  const confidenceArray = useStore((state) => state.confidenceArray);
-  const setConfidence = useStore((state) => state.setConfidence);
-  const confidenceIdx = useStore((state) => state.confidenceIdx);
-  const setConfidenceIdx = useStore((state) => state.setConfidenceIdx);
-  const forecastDates = useStore((state) => state.forecastDates);
-  const setForecastDate = useStore((state) => state.setForecastDate);
-  const forecastSliderIndex = useStore((state) => state.forecastSliderIndex);
-  const setForecastSliderIndex = useStore((state) => state.setForecastSliderIndex);
+  const validMonths = useStore((state) => state.validMonths);
+  const validYears = useStore((state) => state.validYears);
+  const timePeriod = useStore((state) => state.timePeriod);
+  const time = useStore((state) => state.time);
+  const setTime = useStore((state) => state.setTime);
 
   // historical
   const maxHistoricalDate = useStore((state) => state.maxHistoricalDate);
   const historicalDates = useStore((state) => state.historicalDates);
-  const setHistoricalDate = useStore((state) => state.setHistoricalDate);
   const historicalSliderIndex = useStore((state) => state.historicalSliderIndex);
   const setHistoricalSliderIndex = useStore((state) => state.setHistoricalSliderIndex);
   const showTimeError = useStore((state) => state.showTimeError);
   const setShowTimeError = useStore((state) => state.setShowTimeError);
 
-  const validMonths = arrayRange(1, 12, 1)
-    .map(String)
-    .map((val) => val.padStart(2, '0'));
-  const validYears = arrayRange(1991, 2027, 1).map(String);
+  // forecast
+  const forecastDates = useStore((state) => state.forecastDates);
+  const forecastSliderIndex = useStore((state) => state.forecastSliderIndex);
+  const setForecastSliderIndex = useStore((state) => state.setForecastSliderIndex);
+
+  const confidenceArray = useStore((state) => state.confidenceArray);
+  const setConfidence = useStore((state) => state.setConfidence);
+  const confidenceIdx = useStore((state) => state.confidenceIdx);
+  const setConfidenceIdx = useStore((state) => state.setConfidenceIdx);
+
+  // time slider
+  const [sliderIndex, setSliderIndex] = useState(forecastDates.length - 1);
+  const [maxSliderIndex, setMaxSliderIndex] = useState(forecastDates.length - 1);
+  const [minSliderYear, setMinSliderYear] = useState(
+    new Date(forecastDates.at(0) + 'T00:00:00').getFullYear()
+  );
+  const [maxSliderYear, setMaxSliderYear] = useState(
+    new Date(forecastDates.at(-1) + 'T00:00:00').getFullYear()
+  );
 
   const [defaultSkipYear, defaultSkipMonth, _] = maxHistoricalDate.split('-');
   const [skipMonth, setSkipMonth] = useState(defaultSkipMonth);
@@ -49,15 +57,11 @@ export default function Settings() {
       width: '100%',
       py: isWide ? 2 : 1,
       px: [3],
-      mb: [2],
+      mb: timePeriod == 'historical' ? [2] : [4],
     },
     title: {
       mt: [4],
       mb: [1],
-      justifyContent: isWide ? 'space-between' : 'flex-start',
-      gap: isWide ? 0 : 4,
-      alignItems: 'center',
-      alignText: 'center',
       fontSize: isWide ? 2 : 1,
       letterSpacing: 'smallcaps',
       textTransform: 'uppercase',
@@ -136,7 +140,7 @@ export default function Settings() {
     let newIdx = event.target.getAttribute('data-idx');
     setConfidenceIdx(newIdx);
 
-    let confidence = String(event.target.innerHTML).replace('%', '');
+    let confidence = parseInt(String(event.target.innerHTML).replace('%', ''));
     if (confidenceArray.includes(confidence)) {
       setConfidence(confidence);
     }
@@ -176,27 +180,48 @@ export default function Settings() {
     );
   });
 
+  useEffect(() => {
+    let index = timePeriod == 'historical' ? historicalDates.length - 1 : 0;
+    let t = timePeriod == 'historical' ? historicalDates.at(index) : forecastDates.at(index);
+    let maxIndex = timePeriod == 'historical' ? historicalDates.length - 1 : 5;
+    let minYear = new Date(
+      timePeriod == 'historical' ? historicalDates.at(0) : forecastDates.at(0) + 'T00:00:00'
+    ).getFullYear();
+    let maxYear = new Date(
+      timePeriod == 'historical' ? historicalDates.at(-1) : forecastDates.at(-1) + 'T00:00:00'
+    ).getFullYear();
+
+    setSliderIndex(index);
+    setMaxSliderIndex(maxIndex);
+    setMinSliderYear(minYear);
+    setMaxSliderYear(maxYear);
+  }, [timePeriod]);
+
+  useEffect(() => {
+    if (timePeriod == 'historical') {
+      setHistoricalSliderIndex(sliderIndex);
+      setTime(historicalDates.at(sliderIndex));
+    } else {
+      // forecast
+      setForecastSliderIndex(sliderIndex);
+      setTime(forecastDates.at(sliderIndex));
+    }
+  }, [sliderIndex]);
+
   const handleMouseDown = useCallback(() => {
     setSliding(true);
-  }, [forecastSliderIndex, historicalSliderIndex]);
+  }, [time]);
 
   const handleMouseUp = useCallback(() => {
     setSliding(false);
-  }, [forecastSliderIndex, historicalSliderIndex]);
-
-  useEffect(() => {
-    setForecastDate(forecastDates[forecastSliderIndex]);
-  }, [forecastSliderIndex]);
-
-  useEffect(() => {
-    setHistoricalDate(historicalDates[historicalSliderIndex]);
-  }, [historicalSliderIndex]);
+  }, [time]);
 
   const handleSkipClick = useCallback(() => {
     let tempSliderIndex = historicalDates.indexOf(`${skipYear}-${skipMonth}-01`);
     if (tempSliderIndex != -1) {
       setShowTimeError(false);
       setHistoricalSliderIndex(tempSliderIndex);
+      setTime(historicalDates.at(tempSliderIndex));
     } else {
       setShowTimeError(true);
     }
@@ -235,28 +260,18 @@ export default function Settings() {
           )}
 
           <Box id="time-slider-container">
-            <Box sx={{ ...sx.title, mb: [2] }}>
-              {timePeriod == 'forecast'
-                ? `Forecast date: ${forecastDates[forecastSliderIndex]}`
-                : `Date: ${historicalDates[historicalSliderIndex]}`}
-            </Box>
-
-            {timePeriod == 'forecast' && <Box sx={sx.subtitle}>Months into future:</Box>}
+            <Box sx={{ ...sx.title, mb: [2] }}>{`Date: ${time}`}</Box>
 
             <Slider
-              key={timePeriod}
+              key={'time-slider'}
               id={'time-slider'}
               sx={sx['time-slider']}
-              value={timePeriod == 'forecast' ? forecastSliderIndex : historicalSliderIndex}
-              onChange={(e) =>
-                timePeriod == 'forecast'
-                  ? setForecastSliderIndex(e.target.value)
-                  : setHistoricalSliderIndex(e.target.value)
-              }
+              value={timePeriod == 'historical' ? historicalSliderIndex : forecastSliderIndex}
+              onChange={(e) => setSliderIndex(e.target.value)}
               onMouseDown={handleMouseDown}
               onMouseUp={handleMouseUp}
               min={0}
-              max={timePeriod == 'forecast' ? forecastDates.length - 1 : historicalDates.length - 1}
+              max={maxSliderIndex}
               step={1}
             />
 
@@ -267,24 +282,8 @@ export default function Settings() {
                   float: 'left',
                 }}
               >
-                {timePeriod == 'forecast'
-                  ? 0
-                  : new Date(historicalDates.at(0) + 'T00:00:00').getFullYear()}
+                {minSliderYear}
               </Box>
-
-              {timePeriod == 'forecast' && (
-                <Box
-                  sx={{
-                    display: 'inline-block',
-                    ml: 'auto',
-                    mr: 'auto',
-                    color: 'secondary',
-                    transition: '0.2s',
-                  }}
-                >
-                  {forecastSliderIndex}
-                </Box>
-              )}
 
               <Box
                 sx={{
@@ -292,81 +291,42 @@ export default function Settings() {
                   display: 'inline-block',
                 }}
               >
-                {timePeriod == 'forecast'
-                  ? forecastDates.length - 1
-                  : new Date(historicalDates.at(-1) + 'T00:00:00').getFullYear()}
+                {maxSliderYear}
               </Box>
             </Box>
+          </Box>
 
-            {timePeriod == 'historical' && (
+          {timePeriod == 'historical' && (
+            <>
+              <Box id={'skip-title-container'} sx={{ ...sx.title, mb: 2 }}>
+                <Text sx={{ fontSize: 1, flexBasis: isWide ? '100%' : 'auto', mb: 1 }}>
+                  Jump to:
+                </Text>
+              </Box>
               <Box
+                id={'skip-buttons-container'}
                 sx={{
-                  ...sx.title,
                   display: 'flex',
-                  height: '2rem',
-                  mb: 0,
+                  flexWrap: 'wrap',
+                  justifyContent: 'flex-start',
+                  gap: 3,
+                  alignItems: 'center',
+                  alignText: 'center',
                 }}
               >
-                <Text sx={{ fontSize: 1 }}>Jump to:</Text>
-                {/* <Input
-                  sx={{ width: '30%' }}
-                  type={'number'}
-                  min={1}
-                  max={12}
-                  step={1}
-                  defaultValue={2}
-                /> */}
-
-                {/* <Input
-                  sx={{ width: '20%' }}
-                  type={'text'}
-                  id={'month-skip-input'}
-                  name={'month-input'}
-                  list={'months-list'}
-                  onChange={(e) => setSkipMonth(e.target.value.padStart(2, '0'))}
-                  // placeholder={skipMonth}
-                />
-                <datalist id='months-list'>
-                  {validMonths.map((y, idx) => {
-                    return <option key={idx} value={y} />
-                  })}
-                </datalist> */}
-
-                {/* <Input
-                  sx={{ width: '25%' }}
-                  type={'text'}
-                  id={'year-skip-input'}
-                  name={'year-input'}
-                  list={'years-list'}
-                  onChange={(e) => setSkipYear(e.target.value)}
-                  // placeholder={skipYear}
-                />
-                <datalist id='years-list'>
-                  {validYears.map((y, idx) => {
-                    return <option key={idx} value={y} />
-                  })}
-                </datalist> */}
-
                 <Select
                   id={'month-skip-select'}
                   className={'skip-select'}
                   sx={{ height: '100%', px: 3 }}
+                  defaultValue={defaultSkipMonth}
                   onChange={(e) => setSkipMonth(e.target.value)}
                 >
                   {validMonths.map((month, idx) => {
-                    if (month == defaultSkipMonth) {
-                      return (
-                        <option key={idx} value={month} selected>
-                          {month}
-                        </option>
-                      );
-                    } else {
-                      return (
-                        <option key={idx} value={month}>
-                          {month}
-                        </option>
-                      );
-                    }
+                    return (
+                      <option key={idx} value={month}>
+                        {month}
+                      </option>
+                    );
                   })}
                 </Select>
 
@@ -374,22 +334,15 @@ export default function Settings() {
                   id={'year-skip-select'}
                   className={'skip-select'}
                   sx={{ height: '100%', px: 3 }}
+                  defaultValue={skipYear}
                   onChange={(e) => setSkipYear(e.target.value)}
                 >
                   {validYears.map((year, idx) => {
-                    if (year == defaultSkipYear) {
-                      return (
-                        <option key={idx} value={year} selected>
-                          {year}
-                        </option>
-                      );
-                    } else {
-                      return (
-                        <option key={idx} value={year}>
-                          {year}
-                        </option>
-                      );
-                    }
+                    return (
+                      <option key={idx} value={year}>
+                        {year}
+                      </option>
+                    );
                   })}
                 </Select>
 
@@ -436,26 +389,26 @@ export default function Settings() {
                   <Text>go</Text>
                 </Button>
               </Box>
-            )}
+            </>
+          )}
 
-            {showTimeError && (
-              <Box
-                sx={{
-                  color: 'red',
-                  outlineWidth: '1px',
-                  outlineStyle: 'solid',
-                  outlineColor: 'red',
-                  mt: 4,
-                  py: 2,
-                  textAlign: 'center',
-                }}
-              >
-                <Text sx={{ fontSize: '15px', mx: 2 }}>
-                  Select a time less than: {maxHistoricalDate}
-                </Text>
-              </Box>
-            )}
-          </Box>
+          {showTimeError && (
+            <Box
+              sx={{
+                color: 'red',
+                outlineWidth: '1px',
+                outlineStyle: 'solid',
+                outlineColor: 'red',
+                mt: 4,
+                py: 2,
+                textAlign: 'center',
+              }}
+            >
+              <Text sx={{ fontSize: '15px', mx: 2 }}>
+                Select a time less than: {maxHistoricalDate}
+              </Text>
+            </Box>
+          )}
         </Box>
       </Box>
     </>

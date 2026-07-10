@@ -1,3 +1,4 @@
+import { makeColormap } from '@carbonplan/colormaps';
 import { create } from 'zustand';
 
 const MIN_HISTORICAL_DATE = '1991-01-01';
@@ -11,6 +12,11 @@ export const arrayRange = (start, end, step) => {
   }
   return output;
 };
+
+const validMonths = arrayRange(1, 13, 1)
+  .map(String)
+  .map((val) => val.padStart(2, '0'));
+const validYears = arrayRange(1991, 2027, 1).map(String);
 
 const generateDates = (startDate, monthsRange) => {
   const dates = [];
@@ -51,9 +57,7 @@ const createForecastDates = () => {
 
   return {
     forecastDate: forecastDate,
-    forecastMonth: 1,
     forecastDates: generateDates(forecastDate, monthsRange),
-    forecastSliderIndex: 0,
   };
 };
 
@@ -67,7 +71,8 @@ const createHistoricalDates = () => {
     maxHistoricalDate: maxDate,
     historicalDate: maxDate,
     historicalDates: generateDates(minDate, monthsRange),
-    historicalSliderIndex: monthsRange.at(-1),
+    validMonths: validMonths,
+    validYears: validYears,
   };
 };
 
@@ -97,21 +102,12 @@ export const useStore = create((set, get) => ({
   variableIdx: 0,
   setVariableIdx: (variableIdx) => set({ variableIdx }),
 
-  confidenceArray: ['5', '20', '50', '80', '95'],
-  confidence: '50',
+  confidenceArray: [5, 20, 50, 80, 95],
+  confidence: 50,
   setConfidence: (confidence) => set({ confidence }),
 
   confidenceIdx: 2,
   setConfidenceIdx: (confidenceIdx) => set({ confidenceIdx }),
-
-  band: () => {
-    const { variable, timePeriod, confidence } = get();
-    if (timePeriod == 'forecast') return `${variable}_${confidence}`;
-    else return variable == 'percent' ? 'perc' : variable;
-  },
-
-  opacity: 0,
-  setOpacity: (opacity) => set({ opacity }),
 
   // handle dates
   ...createForecastDates(),
@@ -123,15 +119,18 @@ export const useStore = create((set, get) => ({
   setHistoricalDate: (historicalDate) => set({ historicalDate }),
   setHistoricalSliderIndex: (historicalSliderIndex) => set({ historicalSliderIndex }),
 
-  timePeriodOptions: { historical: false, forecast: true },
+  time: INITIAL_FORECAST_DATE,
+  setTime: (time) => set({ time }),
+
+  // timePeriodOptions: { historical: false, forecast: true },
+  // setTimePeriodOptions: (newOptions) => {
+  //   const timePeriod = Object.keys(newOptions).find((key) => newOptions[key] === true);
+  //   set({
+  //     timePeriodOptions: newOptions,
+  //     timePeriod: timePeriod,
+  //   });
+  // },
   timePeriod: 'forecast',
-  setTimePeriodOptions: (newOptions) => {
-    const timePeriod = Object.keys(newOptions).find((key) => newOptions[key] === true);
-    set({
-      timePeriodOptions: newOptions,
-      timePeriod: timePeriod,
-    });
-  },
   setTimePeriod: (timePeriod) => set({ timePeriod }),
 
   showTimeError: false,
@@ -218,9 +217,6 @@ export const useStore = create((set, get) => ({
     return variable == 'percent' ? redteal : cool;
   },
 
-  thresholds: [],
-  setThresholds: (thresholds) => set({ thresholds }),
-
   climRanges: {
     percent: { min: 0.0, max: 100.0 },
     precip: { min: 0.0, max: 300.0 },
@@ -229,6 +225,12 @@ export const useStore = create((set, get) => ({
     const { climRanges, variable } = get();
     return [climRanges[variable].min, climRanges[variable].max];
   },
+
+  historicalRaster: { current: null },
+  setHistoricalRaster: (ref) => set((state) => ({ historicalRaster: ref })),
+
+  forecastRaster: { current: null },
+  setForecastRaster: (ref) => set((state) => ({ forecastRaster: ref })),
 
   showCharts: false,
   setShowCharts: (showCharts) => set({ showCharts }),

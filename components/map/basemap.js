@@ -9,6 +9,7 @@ const Basemap = () => {
   const initialZoom = useStore((state) => state.initialZoom);
   const minZoom = useStore((state) => state.minZoom);
   const maxZoom = useStore((state) => state.maxZoom);
+  const bounds = useStore((state) => state.bounds);
 
   const mapContainerRef = useRef(null);
   const { map, setMap } = useMap();
@@ -23,6 +24,7 @@ const Basemap = () => {
       zoom: initialZoom,
       minZoom: minZoom,
       maxZoom: maxZoom,
+      maxBounds: bounds,
     });
 
     mapInstance.on('load', () => {

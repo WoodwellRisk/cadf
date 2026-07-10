@@ -5,7 +5,7 @@ import { Box } from 'theme-ui';
 import { alpha } from '@theme-ui/color';
 import * as d3 from 'd3';
 
-import { useStore } from '../store/index';
+import { arrayRange, useStore } from '../store/index';
 
 export default function DotChart() {
   const containerRef = useRef(null);
@@ -18,17 +18,22 @@ export default function DotChart() {
   const plotData = useStore((state) => state.plotData);
   const gintoUri = useStore((state) => state.gintoUri);
 
-  // console.log(plotData)
-  // console.log()
-
   // function that (re)draws the chart whenever the container size changes.
   function drawChart() {
     const container = containerRef.current;
     if (!container) return;
 
+    if (!variable || !plotData[variable]) return;
+
     const varMax = variable == 'percent' ? 100 : 300;
     const xAxisTitle = variable == 'percent' ? 'Percentile' : 'Precipitation (mm)';
 
+    const min = 0;
+    const max = varMax;
+    const range = max - min;
+    const nBins = 11;
+    const binWidth = range / nBins;
+    let thresholds = arrayRange(min + binWidth, max + binWidth, binWidth);
     const colorScale = d3.scaleThreshold().domain(thresholds).range(colormap);
 
     // Clear any previous SVG (important on resize).
@@ -129,15 +134,36 @@ export default function DotChart() {
       .select('.domain')
       .remove();
 
-    if (plotData && Object.keys(plotData).length != 0) {
+    // our data starts out like this:
+    // 5: Object { "2025-10-01": (1) […], "2025-11-01": (1) […], "2025-12-01": (1) […], … }
+    // 20: Object { "2025-10-01": (1) […], "2025-11-01": (1) […], "2025-12-01": (1) […], … }
+    // 50: Object { "2025-10-01": (1) […], "2025-11-01": (1) […], "2025-12-01": (1) […], … }
+    // 80: Object { "2025-10-01": (1) […], "2025-11-01": (1) […], "2025-12-01": (1) […], … }​
+    // 95: Object { "2025-10-01": (1) […], "2025-11-01": (1) […], "2025-12-01": (1) […], … }
+
+    // then we filter it for max values so it looks like:
+    // 0: Object { date: "10-2025", x: (5) […] }
+    // 1: Object { date: "11-2025", x: (5) […] }
+    // 2: Object { date: "12-2025", x: (5) […] }
+    // 3: Object { date: "01-2026", x: (5) […] }
+    // 4: Object { date: "02-2026", x: (5) […] }
+    // 5: Object { date: "03-2026", x: (5) […] }
+
+    if (plotData && plotData[variable] && Object.keys(plotData[variable]).length != 0) {
       // the data for plotting each line or row on the dot chart
-      const data = formattedDates.map((date, idx) => ({
-        date: date,
-        x: confidenceArray.map((confidence) => {
-          let val = plotData[`${variable}_${confidence}`][idx];
+      const data = forecastDates.map((date, idx) => {
+        let [year, month, day] = date.split('-');
+        let formattedDate = `${month}-${year}`;
+        let values = confidenceArray.map((confidence) => {
+          let val = plotData[variable][confidence][date][0];
           return val > varMax ? varMax : val;
-        }),
-      }));
+        });
+
+        return {
+          date: formattedDate,
+          x: values,
+        };
+      });
 
       svg
         .append('g')
@@ -155,6 +181,17 @@ export default function DotChart() {
         .attr('stroke-linecap', 'round');
 
       // the data for plotting each point on the dot chart
+      // a flatted version of the `data` array
+      // 0: Object { date: "10-2025", x: ..., confidence: 5 }
+      // 1: Object { date: "10-2025", x: ..., confidence: 20 }
+      // 2: Object { date: "10-2025", x: ..., confidence: 50 }
+      // 3: Object { date: "10-2025", x: ..., confidence: 80 }
+      // 4: Object { date: "10-2025", x: ..., confidence: 95 }
+      // 5: Object { date: "11-2025", x: ..., confidence: 5 }
+      // 6: Object { date: "11-2025", x: ..., confidence: 20 }
+      // 7: Object { date: "11-2025", x: ..., confidence: 50 }
+      // 8: Object { date: "11-2025", x: ..., confidence: 80 }
+      // 9: Object { date: "11-2025", x: ..., confidence: 95 }
       const tidyPoints = [];
       Object.values(data).forEach((row) => {
         row.x.forEach((val, idx) => {
@@ -185,7 +222,7 @@ export default function DotChart() {
 
   useEffect(() => {
     drawChart();
-  }, [variable, plotData]);
+  }, [plotData]);
 
   return (
     <Box

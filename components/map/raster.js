@@ -5,31 +5,28 @@ import { useMap } from './map-provider';
 import { useMapView } from './use-map-view';
 import { useStore } from '../store/index';
 
-const Raster = ({ id, source, variable }) => {
+const Raster = ({ id, source, opacity, setRaster }) => {
   const zarrLayerRef = useRef(null);
   const removed = useRef(false);
   const { map } = useMap();
   const { zoom, center } = useMapView();
 
-  // const band = useStore(state => state.band)()
-  // const clim = useStore(state => state.clim)()
-  // const colormap = useStore(state => state.colormap)()
-  const historicalDate = useStore((state) => state.historicalDate);
-  // const timePeriod = useStore(state => state.timePeriod)
-  const showStatesLayer = useStore((state) => state.showStatesLayer);
-  const showCountriesLayer = useStore((state) => state.showCountriesLayer);
+  const clim = useStore((state) => state.clim)();
+  const colormap = useStore((state) => state.colormap)();
+  const variable = useStore((state) => state.variable);
+  const confidence = useStore((state) => state.confidence);
+  const time = useStore((state) => state.time);
 
-  useEffect(() => {
-    if (!zarrLayerRef.current) return;
+  // useEffect(() => {
+  //   if (!zarrLayerRef.current) return;
 
-    console.log(zoom);
-    if (zoom < 4.5) zarrLayerRef.current.setUniforms({ u_zoom: zoom });
-    if (zoom >= 4.5) zarrLayerRef.current.setUniforms({ u_zoom: zoom });
-  }, [zoom]);
+  //   if (zoom < 4.5) zarrLayerRef.current.setUniforms({ u_zoom: zoom });
+  //   if (zoom >= 4.5) zarrLayerRef.current.setUniforms({ u_zoom: zoom });
+  // }, [zoom]);
 
   const customFrag = `
-    const float TILE_SIZE = 128.0;
-
+    const float TILE_SIZE = 256.0;
+    // uniform float u_var;
     uniform float u_zoom;
     const float ZOOM_THRESHOLD = 4.5;
     // 0 at low zooms, 5% of a pixel width at medium / high zooms
@@ -38,8 +35,11 @@ const Raster = ({ id, source, variable }) => {
     // recalculate the texture and color
     // https://github.com/carbonplan/zarr-layer/tree/main?tab=readme-ov-file#ndvi-example
     // band / variable name
-    float dataVal = perc;
-    // Handle NaN/Fill values (optional, but good practice)
+    // this will need to change based on a uniform value for the variable
+    float dataVal = ${variable};
+    // float dataVal = u_var;
+
+    // handle NaN/Fill values 
     if (isnan(dataVal)) {
       fragColor.a = 0.0;
       return;
@@ -68,8 +68,9 @@ const Raster = ({ id, source, variable }) => {
     float maxDist = 0.5 * texelSize.x;
     
     // radius settings
-    // circle fills 85% of the pixel
-    float radiusFactor = 0.85;
+    // in the future, we will need to base radiusFactor on the 'agree' variable in our data
+    // circle fills 90% of the pixel
+    float radiusFactor = 0.9;
     float outerRadius = maxDist * radiusFactor;
     float innerRadius = maxDist * (radiusFactor - borderWidth);
     
@@ -102,74 +103,56 @@ const Raster = ({ id, source, variable }) => {
     if (!map) return;
 
     const zarrLayer = new ZarrLayer({
-      id: id || 'zarr-layer',
+      id: id,
       source: source,
       zarrVersion: 2,
       variable: variable,
-      // clim: clim,
-      clim: [0, 1],
-      // colormap: colormap,
-      colormap: makeColormap('redteal', { mode: 'light', count: 255 }),
-      opacity: 1,
-      selector: { variable: variable, time: historicalDate },
-      uniforms: { u_zoom: zoom },
+      clim: clim,
+      colormap: colormap,
+      opacity: opacity,
+      selector: { variable: variable, time: time, confidence: confidence },
+      // uniforms: { u_zoom: zoom, u_var: variable == 'percent' ? 0 : 1 },
+      // uniforms: { u_zoom: zoom },
       // customFrag: customFrag,
-      customFrag: '',
+      // customFrag: '',
     });
     map.addLayer(zarrLayer);
     zarrLayerRef.current = zarrLayer;
-
-    let layers = map.getStyle().layers;
-    let ocean = layers.find((layer) => layer.source == 'ocean');
-    let land = layers.find((layer) => layer.source == 'land');
-    let lakesFill = layers.find((layer) => layer.source == 'lakes-fill');
-    let lakes = layers.find((layer) => layer.source == 'lakes');
-    let states = showStatesLayer ? layers.find((layer) => layer.source == 'states') : undefined;
-    let countries = showCountriesLayer
-      ? layers.find((layer) => layer.source == 'countries')
-      : undefined;
-
-    map.moveLayer(ocean.id, land.id);
-    map.moveLayer(lakes.id, ocean.id);
-    map.moveLayer(lakesFill.id, lakes.id);
-    map.moveLayer(id || 'raster', lakesFill.id);
-
-    if (states) map.moveLayer(states.id, land.id);
-    if (countries) map.moveLayer(countries.id, states?.id || land.id);
-
-    if (states && countries) {
-      map.moveLayer(states.id, countries.id);
-    }
+    setRaster(zarrLayer);
 
     return () => {
-      let layerId = id || 'raster';
+      let layerId = id;
       if (map.getLayer(layerId)) map.removeLayer(layerId);
     };
-  }, [map, id]);
-
-  useEffect(() => {
-    if (!map || !zarrLayerRef.current) return;
-    let layer = zarrLayerRef.current;
-
-    layer.setSelector({ variable: variable, time: historicalDate });
-  }, [map, historicalDate]);
-
-  useEffect(() => {
-    if (!map || !zarrLayerRef.current) return;
-    let layer = zarrLayerRef.current;
-
-    // layer.setColormap(colormap)
-    // layer.setClim(clim)
-
-    layer.setSelector({ variable: variable, time: historicalDate });
   }, [map, variable]);
 
-  // useEffect(() => {
-  //   if (!map || !zarrLayerRef.current) return;
-  //   let layer = zarrLayerRef.current;
+  useEffect(() => {
+    if (!map || !zarrLayerRef.current) return;
+    let layer = zarrLayerRef.current;
 
-  //   layer.setOpacity(opacity);
-  // }, [map, opacity]);
+    layer.setSelector({ variable: variable, confidence: confidence, time: time });
+  }, [map, time]);
+
+  useEffect(() => {
+    if (!map || !zarrLayerRef.current) return;
+    let layer = zarrLayerRef.current;
+
+    layer.setSelector({ variable: variable, confidence: confidence, time: time });
+  }, [map, variable]);
+
+  useEffect(() => {
+    if (!map || !zarrLayerRef.current) return;
+    let layer = zarrLayerRef.current;
+
+    layer.setSelector({ variable: variable, confidence: confidence, time: time });
+  }, [map, confidence]);
+
+  useEffect(() => {
+    if (!map || !zarrLayerRef.current) return;
+    let layer = zarrLayerRef.current;
+
+    layer.setOpacity(opacity);
+  }, [map, opacity]);
 
   return null;
 };
