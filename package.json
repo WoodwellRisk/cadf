@@ -26,10 +26,11 @@
     "@carbonplan/components": "^12.6.1",
     "@carbonplan/icons": "^2.0.0",
     "@carbonplan/theme": "^8.1.0",
-    "@carbonplan/zarr-layer": "^0.4.3",
+    "@carbonplan/zarr-layer": "^0.9",
     "@emotion/react": "^11.11.4",
     "@theme-ui/color": "^0.16.2",
     "@theme-ui/match-media": "^0.16.2",
+    "@zarrita/ndarray": "^0.1.9",
     "d3": "^7.9.0",
     "file-saver": "^2.0.5",
     "maplibre-gl": "^5.21.1",
@@ -37,6 +38,7 @@
     "react-animate-height": "^3.2.3",
     "theme-ui": "^0.16.2",
     "uuid": ">=13.0.1",
+    "zarrita": "^0.7.5",
     "zustand": "^5.0.0-rc.2"
   },
   "peerDependencies": {

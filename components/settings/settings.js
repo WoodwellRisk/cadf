@@ -1,11 +1,11 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { Box, Button, IconButton, Input, Select, Slider, Text } from 'theme-ui';
 import { useBreakpointIndex } from '@theme-ui/match-media';
 import { alpha } from '@theme-ui/color';
 import { X } from '@carbonplan/icons';
 
 import { Info } from '../view/index';
-import { arrayRange, useStore } from '../store/index';
+import { generateLeadDates, useStore } from '../store/index';
 
 export default function Settings() {
   const isWide = useBreakpointIndex() > 0;
@@ -14,6 +14,7 @@ export default function Settings() {
   const setVariable = useStore((state) => state.setVariable);
   const variableIdx = useStore((state) => state.variableIdx);
   const setVariableIdx = useStore((state) => state.setVariableIdx);
+  const sliding = useStore((state) => state.sliding);
   const setSliding = useStore((state) => state.setSliding);
   const validMonths = useStore((state) => state.validMonths);
   const validYears = useStore((state) => state.validYears);
@@ -33,6 +34,13 @@ export default function Settings() {
   const forecastDates = useStore((state) => state.forecastDates);
   const forecastSliderIndex = useStore((state) => state.forecastSliderIndex);
   const setForecastSliderIndex = useStore((state) => state.setForecastSliderIndex);
+  const setLead = useStore((state) => state.setLead);
+  const leadIndex = useStore((state) => state.leadIndex);
+  const setLeadIndex = useStore((state) => state.setLeadIndex);
+  const leadDates = useMemo(
+    () => generateLeadDates(forecastDates.at(forecastSliderIndex)),
+    [forecastSliderIndex]
+  );
 
   const confidenceArray = useStore((state) => state.confidenceArray);
   const setConfidence = useStore((state) => state.setConfidence);
@@ -40,10 +48,14 @@ export default function Settings() {
   const setConfidenceIdx = useStore((state) => state.setConfidenceIdx);
 
   // time slider
-  const [sliderIndex, setSliderIndex] = useState(forecastDates.length - 1);
-  const [maxSliderIndex, setMaxSliderIndex] = useState(forecastDates.length - 1);
-  const [minSliderYear, setMinSliderYear] = useState(Number(forecastDates.at(0).split('-')[0]));
-  const [maxSliderYear, setMaxSliderYear] = useState(Number(forecastDates.at(-1).split('-')[0]));
+  // const [sliderIndex, setSliderIndex] = useState(forecastDates.length - 1);
+  // const [maxSliderIndex, setMaxSliderIndex] = useState(forecastDates.length - 1);
+  // const [minSliderYear, setMinSliderYear] = useState(Number(forecastDates.at(0).split('-')[0]));
+  // const [maxSliderYear, setMaxSliderYear] = useState(Number(forecastDates.at(-1).split('-')[0]));
+  const [sliderIndex, setSliderIndex] = useState(historicalDates.length - 1);
+  const [maxSliderIndex, setMaxSliderIndex] = useState(historicalDates.length - 1);
+  const [minSliderYear, setMinSliderYear] = useState(Number(historicalDates.at(0).split('-')[0]));
+  const [maxSliderYear, setMaxSliderYear] = useState(Number(historicalDates.at(-1).split('-')[0]));
 
   const [defaultSkipYear, defaultSkipMonth, _] = maxHistoricalDate.split('-');
   const [skipMonth, setSkipMonth] = useState(defaultSkipMonth);
@@ -53,28 +65,16 @@ export default function Settings() {
     'settings-container': {
       width: '100%',
       py: isWide ? 2 : 1,
-      px: [3],
-      mb: timePeriod == 'historical' ? [2] : [4],
+      px: 3,
+      // mb: timePeriod == 'historical' ? 2 : 4,
+      mb: 2,
     },
     title: {
-      mt: [4],
-      mb: [1],
+      mt: 4,
+      mb: 1,
       fontSize: isWide ? 2 : 1,
       letterSpacing: 'smallcaps',
       textTransform: 'uppercase',
-    },
-    subtitle: {
-      color: 'gray',
-      fontSize: isWide ? '0.9rem' : '0.75rem',
-      mt: 1,
-      mb: 1,
-    },
-    'data-description': {
-      fontSize: '0.875rem',
-      color: 'primary',
-    },
-    'data-source': {
-      mt: 2,
     },
     button: {
       alignContent: 'center',
@@ -112,11 +112,25 @@ export default function Settings() {
       mt: 3,
       mb: 3,
     },
-    'slider-labels-container': {
+    'time-slider-labels-container': {
       textAlign: 'center',
-      pb: timePeriod == 'forecast' ? 0 : 2,
+      pb: timePeriod == 'forecast' ? 4 : 2,
+    },
+    'lead-slider-labels-container': {
+      textAlign: 'center',
+      pb: 1,
     },
   };
+
+  // every time the forecast 'init date' position changes,
+  // we want to reset the lead time or 'target date' back to the starting position
+  useEffect(() => {
+    setLeadIndex(1);
+  }, [forecastSliderIndex]);
+
+  useEffect(() => {
+    if (!sliding) setLead(leadIndex);
+  }, [leadIndex, sliding]);
 
   const handleVariableChange = useCallback((event) => {
     let newIdx = event.target.getAttribute('data-idx');
@@ -124,9 +138,9 @@ export default function Settings() {
 
     let variable =
       event.target.innerHTML == 'Percentiles'
-        ? 'percent'
+        ? 'percentile'
         : event.target.innerHTML == 'Monthly totals'
-          ? 'precip'
+          ? 'total'
           : null;
     if (variable != null) {
       setVariable(variable);
@@ -180,7 +194,8 @@ export default function Settings() {
   useEffect(() => {
     let index = timePeriod == 'historical' ? historicalDates.length - 1 : 0;
     let t = timePeriod == 'historical' ? historicalDates.at(index) : forecastDates.at(index);
-    let maxIndex = timePeriod == 'historical' ? historicalDates.length - 1 : 5;
+    let maxIndex =
+      timePeriod == 'historical' ? historicalDates.length - 1 : forecastDates.length - 1;
     let minYear =
       timePeriod == 'historical'
         ? Number(historicalDates.at(0).split('-')[0])
@@ -199,21 +214,13 @@ export default function Settings() {
   useEffect(() => {
     if (timePeriod == 'historical') {
       setHistoricalSliderIndex(sliderIndex);
-      setTime(historicalDates.at(sliderIndex));
+      if (!sliding) setTime(historicalDates.at(sliderIndex));
     } else {
-      // forecast
+      // timePeriod == 'forecast'
       setForecastSliderIndex(sliderIndex);
-      setTime(forecastDates.at(sliderIndex));
+      if (!sliding) setTime(forecastDates.at(sliderIndex));
     }
-  }, [sliderIndex]);
-
-  const handleMouseDown = useCallback(() => {
-    setSliding(true);
-  }, [time]);
-
-  const handleMouseUp = useCallback(() => {
-    setSliding(false);
-  }, [time]);
+  }, [sliderIndex, sliding]);
 
   const handleSkipClick = useCallback(() => {
     let tempSliderIndex = historicalDates.indexOf(`${skipYear}-${skipMonth}-01`);
@@ -277,7 +284,14 @@ export default function Settings() {
           )} */}
 
           <Box id="time-slider-container">
-            <Box sx={{ ...sx.title, mb: [2] }}>{`Date: ${time}`}</Box>
+            <Box sx={{ ...sx.title, mb: [2] }}>
+              {`${timePeriod == 'forecast' ? 'Initialization' : 'Date'}: 
+                ${
+                  timePeriod == 'historical'
+                    ? historicalDates.at(historicalSliderIndex)
+                    : forecastDates.at(forecastSliderIndex)
+                }`}
+            </Box>
 
             <Slider
               key={'time-slider'}
@@ -285,14 +299,15 @@ export default function Settings() {
               sx={sx['time-slider']}
               value={timePeriod == 'historical' ? historicalSliderIndex : forecastSliderIndex}
               onChange={(e) => setSliderIndex(e.target.value)}
-              onMouseDown={handleMouseDown}
-              onMouseUp={handleMouseUp}
+              onMouseDown={() => setSliding(true)}
+              onMouseUp={() => setSliding(false)}
+              onPointerUp={() => setSliding(false)}
               min={0}
               max={maxSliderIndex}
               step={1}
             />
 
-            <Box sx={sx['slider-labels-container']}>
+            <Box sx={sx['time-slider-labels-container']}>
               <Box
                 sx={{
                   display: 'inline-block',
@@ -312,6 +327,46 @@ export default function Settings() {
               </Box>
             </Box>
           </Box>
+
+          {timePeriod == 'forecast' && (
+            <>
+              <Box sx={{ ...sx.title }}>{`Prediction: ${leadDates.at(leadIndex - 1)}`}</Box>
+
+              <Slider
+                key={'lead-slider'}
+                id={'lead-slider'}
+                sx={sx['time-slider']}
+                value={leadIndex}
+                onChange={(e) => setLeadIndex(Number(e.target.value))}
+                onMouseDown={() => setSliding(true)}
+                onMouseUp={() => setSliding(false)}
+                onPointerUp={() => setSliding(false)}
+                min={1}
+                max={6}
+                step={1}
+              />
+
+              {/* <Box sx={sx['lead-slider-labels-container']}>
+                <Box
+                  sx={{
+                    display: 'inline-block',
+                    float: 'left',
+                  }}
+                >
+                  {1}
+                </Box>
+
+                <Box
+                  sx={{
+                    float: 'right',
+                    display: 'inline-block',
+                  }}
+                >
+                  {6}
+                </Box>
+              </Box> */}
+            </>
+          )}
 
           {timePeriod == 'historical' && (
             <>
