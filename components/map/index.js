@@ -1,14 +1,11 @@
-import { Box, useThemeUI } from 'theme-ui';
-import { useState, useEffect } from 'react';
-import { Slider } from '@carbonplan/components';
+import { useThemeUI } from 'theme-ui';
 
 import MapProvider from './map-provider';
 import Basemap from './basemap';
 import Fill from './fill';
 import Line from './line';
 import { HistoricalRaster, ForecastRaster } from './raster/index';
-import PointQuery from './query/point-query';
-import PointQueryZarrita from './query/point-query-zarrita';
+import { PointQuery } from './query/index';
 import Router from './router';
 import ZoomReset from './zoom-reset';
 import LayerOrder from './layer-order';
@@ -18,15 +15,8 @@ export const Map = () => {
   const { theme } = useThemeUI();
 
   const zoom = useStore((state) => state.zoom);
-  const variable = useStore((state) => state.variable);
   const timePeriod = useStore((state) => state.timePeriod);
-  const confidence = useStore((state) => state.confidence);
-  const forecastDate = useStore((state) => state.forecastDate);
-  const maxHistoricalDate = useStore((state) => state.maxHistoricalDate);
-
   const setRaster = useStore((state) => state.setRaster);
-  const setHistoricalRaster = useStore((state) => state.setHistoricalRaster);
-  const setForecastRaster = useStore((state) => state.setForecastRaster);
 
   const showLandLayer = useStore((state) => state.showLandLayer);
   const showLakesLayer = useStore((state) => state.showLakesLayer);
@@ -46,39 +36,6 @@ export const Map = () => {
           variable={'countries'}
         />
       )} */}
-
-      {/* <Raster
-        // key={`${timePeriod}-${variable}`}
-        id={`historical-raster`}
-        source={variable == 'percent' ? `https://storage.googleapis.com/water-balance/zarr/viz/wb-h3-${maxHistoricalDate}.zarr` : `https://storage.googleapis.com/water-balance/zarr/viz/precip-h-${maxHistoricalDate}.zarr`}
-        opacity={timePeriod == 'forecast' ? 0 : 1}
-        setRaster={setHistoricalRaster}
-      />
-
-      <Raster
-        id={`forecast-raster`}
-        source={`https://storage.googleapis.com/cadf/zarr/viz/precip-f-2025-09-01.zarr`}
-        opacity={timePeriod == 'forecast' ? 1 : 0}
-        setRaster={setForecastRaster}
-      /> */}
-
-      {/* <Raster
-        id={`raster`}
-        // source={`https://storage.googleapis.com/cadf/zarr/viz/cadf.zarr`}
-        source={`https://storage.googleapis.com/cadf/zarr/viz/cadf-v3.zarr`}
-        // source={`https://storage.googleapis.com/cadf/zarr/viz/cadf-v3-rechunk-confidence.zarr`}
-        // source={`https://storage.googleapis.com/cadf/zarr/viz/cadf-v3-rechunk-confidence-xy.zarr`}
-        opacity={timePeriod == 'forecast' ? 1 : 0}
-        setRaster={setRaster}
-      /> */}
-
-      {/* <BandedRaster
-        id={`raster`}
-        source={`https://storage.googleapis.com/cadf/zarr/viz/cadf-v2-bands.zarr`}
-        // source={`https://storage.googleapis.com/cadf/zarr/viz/cadf-v2-bands-topozarr.zarr`}
-        // source={`https://storage.googleapis.com/cadf/zarr/viz/cadf-v3-bands-topozarr.zarr`}
-        setRaster={setRaster}
-      /> */}
 
       {timePeriod == 'historical' && <HistoricalRaster id={`raster`} setRaster={setRaster} />}
       {timePeriod == 'forecast' && <ForecastRaster id={`raster`} setRaster={setRaster} />}
@@ -139,8 +96,7 @@ export const Map = () => {
         />
       )}
 
-      {/* {true && <PointQueryZarrita />} */}
-      {/* {true && <PointQuery />} */}
+      {showCharts && <PointQuery />}
 
       <Router />
 

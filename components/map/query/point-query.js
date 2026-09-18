@@ -3,6 +3,7 @@ import { useThemeUI, Box } from 'theme-ui';
 import { useMap } from '../map-provider';
 import { v4 as uuidv4 } from 'uuid';
 
+import { queryCoordinates } from './utils';
 import { useStore } from '../../store/index';
 
 export default function PointQuery({ key, id }) {
@@ -13,17 +14,10 @@ export default function PointQuery({ key, id }) {
   const sourceIdRef = useRef();
   const layerIdRef = useRef();
 
-  const variableArray = useStore((state) => state.variableArray);
-  const variable = useStore((state) => state.variable);
-  const confidenceArray = useStore((state) => state.confidenceArray);
   const timePeriod = useStore((state) => state.timePeriod);
-  const time = useStore((state) => state.time);
-  const historicalDates = useStore((state) => state.historicalDates);
-  const forecastDates = useStore((state) => state.forecastDates);
-
-  const band = useStore((state) => state.band)();
-
-  const raster = useStore((state) => state.raster);
+  const forecastDate = useStore((state) => state.forecastDate);
+  const setPlotData = useStore((state) => state.setPlotData);
+  const setQueryStatus = useStore((state) => state.setQueryStatus);
 
   const roundToNearest025 = (num) => {
     return Math.round(num * 4) / 4;
@@ -33,12 +27,11 @@ export default function PointQuery({ key, id }) {
     return parseFloat(roundToNearest025(num).toFixed(2));
   }
 
-  const queryPoint = map.getCenter();
+  const queryPoint = { lng: 15.7, lat: 2.6 };
   const [coords, setCoords] = useState([
     toTwoDecimalPlaces(queryPoint['lng']),
     toTwoDecimalPlaces(queryPoint['lat']),
   ]);
-  const setPlotData = useStore((state) => state.setPlotData);
 
   const [coordinates, setCoordinates] = useState([
     `Longitude: ${coords[0]}`,
@@ -165,85 +158,43 @@ export default function PointQuery({ key, id }) {
     };
   }, []);
 
-  // useEffect(() => {
-  //   let rasterQuery = () => {
-  //     try {
-  //       const rasterQuery = raster
-  //         .queryData(
-  //           { type: 'Point', coordinates: coords },
-  //           {
-  //             time: timePeriod == 'forecast' ? forecastDates : historicalDates,
-  //             variable: variable,
-  //             confidence: timePeriod == 'forecast' ? confidenceArray : 50,
-  //           }
-  //         )
-  //         .then((result) => {
-  //           console.log(result)
-  //           if (timePeriod == 'forecast') setPlotData(result);
-  //         });
-  //     } catch (error) {
-  //       console.error('Error querying raster:', error);
-  //     }
-  //   };
-  //   setTimeout(rasterQuery, 150);
-  // }, [raster, variable, coords, timePeriod]);
-
-  //   useEffect(() => {
-  //   let rasterQuery = () => {
-  //     try {
-  //       const rasterQuery = raster
-  //         .queryData(
-  //           { type: 'Point', coordinates: coords },
-  //           {
-  //             time: timePeriod == 'forecast' ? forecastDates : historicalDates,
-  //             band: confidenceArray.map((num) => `${variable}_${num}`),
-  //           }
-  //         )
-  //         .then((result) => {
-  //           result[variable] = result.variable;
-  //           delete result.variable;
-
-  //           confidenceArray.forEach((k) => {
-  //             result[variable][k] = result[variable][`${variable}_${k}`]
-  //             delete result[variable][`${variable}_${k}`]
-  //           })
-  //           if(timePeriod == 'forecast') {
-  //             setPlotData(result);
-  //           }
-  //         });
-  //     } catch (error) {
-  //       console.error('Error querying raster:', error);
-  //     }
-  //   };
-
-  //   rasterQuery()
-  // }, [timePeriod, raster]);
-
   useEffect(() => {
-    if (timePeriod == 'forecast') {
-      return;
-    } else {
-      let rasterQuery = () => {
-        try {
-          const rasterQuery = raster
-            .queryData(
-              { type: 'Point', coordinates: coords },
-              {
-                time: historicalDates,
-                band: variableArray,
-              }
-            )
-            .then((result) => {
-              console.log(result);
-            });
-        } catch (error) {
-          console.error('Error querying raster:', error);
-        }
-      };
+    if (!coords) return;
 
-      rasterQuery();
+    const abortController = new AbortController();
+    const { signal } = abortController;
+
+    setQueryStatus('loading');
+
+    if (timePeriod == 'forecast') {
+      queryCoordinates(coords, 'forecast', forecastDate, { signal })
+        .then((result) => {
+          if (!signal.aborted) setPlotData(result?.data);
+        })
+        // .then((result) => console.log(result))
+        .catch((error) => {
+          if (error.name !== 'AbortError') {
+            setQueryStatus('error');
+            console.error('Error querying forecast raster:', error);
+          }
+        });
+    } else {
+      queryCoordinates(coords)
+        .then((result) => {
+          if (!signal.aborted) setPlotData(result?.data);
+        })
+        .catch((error) => {
+          if (error.name !== 'AbortError') {
+            setQueryStatus('error');
+            console.error('Error querying historical raster:', error);
+          }
+        });
     }
-  }, [timePeriod, raster, coords]);
+
+    return () => {
+      abortController.abort(); // cancel pending request on cleanup
+    };
+  }, [timePeriod, coords, forecastDate]);
 
   return (
     <Box

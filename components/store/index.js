@@ -75,10 +75,12 @@ const createForecastDates = () => {
   let maxDate = MAX_HISTORICAL_DATE;
   let monthsBetweenDates = getDifferenceInMonths(minDate, maxDate);
   let monthsRange = arrayRange(0, monthsBetweenDates, 1);
+  let forecastDates = generateDates(minDate, monthsRange);
 
   return {
+    forecastDates: forecastDates,
     forecastDate: maxDate,
-    forecastDates: generateDates(minDate, monthsRange),
+    forecastSliderIndex: forecastDates.length - 1,
   };
 };
 
@@ -87,11 +89,13 @@ const createHistoricalDates = () => {
   let maxDate = MAX_HISTORICAL_DATE;
   let monthsBetweenDates = getDifferenceInMonths(minDate, maxDate);
   let monthsRange = arrayRange(0, monthsBetweenDates, 1);
+  let historicalDates = generateDates(minDate, monthsRange);
 
   return {
     maxHistoricalDate: maxDate,
     historicalDate: maxDate,
-    historicalDates: generateDates(minDate, monthsRange),
+    historicalDates: historicalDates,
+    historicalSliderIndex: historicalDates.length - 1,
     validMonths: validMonths,
     validYears: validYears,
   };
@@ -148,7 +152,9 @@ export const useStore = create((set, get) => ({
   // this is for the first forecast slider, 'initialization' date
   ...createForecastDates(),
   setForecastMonth: (forecastMonth) => set({ forecastMonth }),
-  setForecastDate: (forecastDate) => set({ forecastDate }),
+  // setForecastDate: (forecastDate) => set({ forecastDate }),
+  setForecastDate: (forecastDate) =>
+    set({ forecastDate, leadDates: generateLeadDates(forecastDate) }),
   setForecastSliderIndex: (forecastSliderIndex) => set({ forecastSliderIndex }),
 
   // this is for the secondary forecast slider, 'target' date
@@ -271,7 +277,8 @@ export const useStore = create((set, get) => ({
   setFilterCoordinates: (filterCoordinates) => set({ filterCoordinates }),
 
   plotData: {},
-  setPlotData: (plotData) => set({ plotData }),
+  setPlotData: (plotData) => set({ plotData, queryStatus: 'success' }),
+  setQueryStatus: (status) => set({ queryStatus: status }),
 
   showLandLayer: true,
   setShowLandLayer: (showLandLayer) => set({ showLandLayer }),

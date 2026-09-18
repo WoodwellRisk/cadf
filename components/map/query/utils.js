@@ -1,6 +1,8 @@
 import * as zarr from 'zarrita';
 import { get } from '@zarrita/ndarray';
 
+import { generateLeadDates } from '../../store';
+
 const DATASETS = {
   historical: {
     source: 'https://storage.googleapis.com/cadf/zarr/h-topozarr-3-viz-query.zarr',
@@ -22,12 +24,12 @@ function buildContext(timePeriod) {
     const root = zarr.root(new zarr.FetchStore(source));
 
     const readArray = async (name) => {
-      const array = await zarr.open(root.resolve(name), { kind: 'array' });
+      const array = await zarr.open(root.resolve(name), { kind: 'array', format: 3 });
       return await zarr.get(array);
     };
 
     const context = {
-      array: await zarr.open(root.resolve('query'), { kind: 'array' }),
+      array: await zarr.open(root.resolve('query'), { kind: 'array', format: 3 }),
       x: Array.from((await readArray('x')).data),
       y: Array.from((await readArray('y')).data),
       time: Array.from((await readArray('time')).data),
@@ -183,8 +185,8 @@ export async function queryHistoricalPoint(coords) {
   });
 }
 
-export async function queryForecastPoint(coords, targetDate = null) {
-  if (!targetDate) return;
+export async function queryForecastPoint(coords, forecastDate = null) {
+  if (!forecastDate) return;
 
   const [lon, lat] = coords;
   const {
@@ -201,7 +203,7 @@ export async function queryForecastPoint(coords, targetDate = null) {
   const yIndex = findNearestIndex(y, lat);
   if (xIndex === null || yIndex === null) return null;
 
-  const timeIndex = timeLabels.indexOf(targetDate);
+  const timeIndex = timeLabels.indexOf(forecastDate);
   if (timeIndex === -1) return null;
 
   // ndarray: shape [band, stat, time, lead, x, y]
@@ -210,12 +212,14 @@ export async function queryForecastPoint(coords, targetDate = null) {
 
   const seriesByBand = {};
 
+  const leadDates = generateLeadDates(forecastDate, leadLabels.length);
+
   bandLabels.forEach((bandLabel, bandIndex) => {
     const seriesByStat = {};
     statLabels.forEach((statLabel, statIndex) => {
       const seriesByLead = {};
       leadLabels.forEach((leadLabel, leadIndex) => {
-        seriesByLead[leadLabel] = [region.get(bandIndex, statIndex, leadIndex)];
+        seriesByLead[leadDates[leadIndex]] = [region.get(bandIndex, statIndex, leadIndex)];
       });
       seriesByStat[statLabel] = seriesByLead;
     });
@@ -229,16 +233,18 @@ export async function queryForecastPoint(coords, targetDate = null) {
       band: bandLabels,
       stat: statLabels,
       time: timeLabels[timeIndex],
-      lead: leadLabels,
-      lat: [context.y[yIndex]],
-      lon: [context.x[xIndex]],
+      // lead: leadLabels,
+      leadDates: leadDates,
+      lat: [y[yIndex]],
+      lon: [x[xIndex]],
     },
   };
 }
 
-export async function queryCoordinates(coords, timePeriod = 'historical', targetDate = null) {
-  if (timePeriod === 'forecast') {
-    return queryForecastPoint(coords, targetDate);
+export async function queryCoordinates(coords, period = 'historical', date = null) {
+  if (period === 'forecast') {
+    // this is querying the forecast data at coords for the initialization date of `date`, which is equal to `forecastDate`
+    return queryForecastPoint(coords, date);
   }
   return queryHistoricalPoint(coords);
 }

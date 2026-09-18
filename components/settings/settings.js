@@ -1,11 +1,11 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Box, Button, IconButton, Input, Select, Slider, Text } from 'theme-ui';
 import { useBreakpointIndex } from '@theme-ui/match-media';
 import { alpha } from '@theme-ui/color';
 import { X } from '@carbonplan/icons';
 
 import { Info } from '../view/index';
-import { generateLeadDates, useStore } from '../store/index';
+import { useStore } from '../store/index';
 
 export default function Settings() {
   const isWide = useBreakpointIndex() > 0;
@@ -19,7 +19,6 @@ export default function Settings() {
   const validMonths = useStore((state) => state.validMonths);
   const validYears = useStore((state) => state.validYears);
   const timePeriod = useStore((state) => state.timePeriod);
-  const time = useStore((state) => state.time);
   const setTime = useStore((state) => state.setTime);
 
   // historical
@@ -31,16 +30,14 @@ export default function Settings() {
   const setShowTimeError = useStore((state) => state.setShowTimeError);
 
   // forecast
+  const setForecastDate = useStore((state) => state.setForecastDate);
   const forecastDates = useStore((state) => state.forecastDates);
   const forecastSliderIndex = useStore((state) => state.forecastSliderIndex);
   const setForecastSliderIndex = useStore((state) => state.setForecastSliderIndex);
   const setLead = useStore((state) => state.setLead);
   const leadIndex = useStore((state) => state.leadIndex);
   const setLeadIndex = useStore((state) => state.setLeadIndex);
-  const leadDates = useMemo(
-    () => generateLeadDates(forecastDates.at(forecastSliderIndex)),
-    [forecastSliderIndex]
-  );
+  const leadDates = useStore((state) => state.leadDates);
 
   const confidenceArray = useStore((state) => state.confidenceArray);
   const setConfidence = useStore((state) => state.setConfidence);
@@ -126,7 +123,8 @@ export default function Settings() {
   // we want to reset the lead time or 'target date' back to the starting position
   useEffect(() => {
     setLeadIndex(1);
-  }, [forecastSliderIndex]);
+    if (!sliding) setForecastDate(forecastDates.at(forecastSliderIndex));
+  }, [forecastSliderIndex, sliding]);
 
   useEffect(() => {
     if (!sliding) setLead(leadIndex);
@@ -192,7 +190,7 @@ export default function Settings() {
   });
 
   useEffect(() => {
-    let index = timePeriod == 'historical' ? historicalDates.length - 1 : 0;
+    let index = timePeriod == 'historical' ? historicalDates.length - 1 : forecastDates.length - 1;
     let t = timePeriod == 'historical' ? historicalDates.at(index) : forecastDates.at(index);
     let maxIndex =
       timePeriod == 'historical' ? historicalDates.length - 1 : forecastDates.length - 1;
