@@ -3,7 +3,7 @@ import { useThemeUI, Box } from 'theme-ui';
 import { useMap } from '../map-provider';
 import { v4 as uuidv4 } from 'uuid';
 
-import { queryCoordinates } from './utils';
+// import { queryCoordinates } from './utils';
 import { useStore } from '../../store/index';
 
 export default function PointQuery({ key, id }) {
@@ -14,8 +14,16 @@ export default function PointQuery({ key, id }) {
   const sourceIdRef = useRef();
   const layerIdRef = useRef();
 
+  const historicalRaster = useStore((state) => state.historicalRaster);
+  const forecastRaster = useStore((state) => state.forecastRaster);
+
+  const variableArray = useStore((state) => state.variableArray);
+  const confidenceArray = useStore((state) => state.confidenceArray);
   const timePeriod = useStore((state) => state.timePeriod);
   const forecastDate = useStore((state) => state.forecastDate);
+  const leadArray = useStore((state) => state.leadArray);
+  const leadDates = useStore((state) => state.leadDates);
+  const historicalDates = useStore((state) => state.historicalDates);
   const setPlotData = useStore((state) => state.setPlotData);
   const setQueryStatus = useStore((state) => state.setQueryStatus);
 
@@ -50,6 +58,32 @@ export default function PointQuery({ key, id }) {
         },
       },
     ],
+  };
+
+  const formatForecastResult = (result, leadDates) => {
+    const seriesByBand = {};
+
+    console.log(result);
+
+    variableArray.forEach((bandLabel) => {
+      const seriesByStat = {};
+      // leaving out 'confidence' in ['5', ..., '95', 'confidence']
+      // not needed for dot chart
+      confidenceArray.forEach((statLabel) => {
+        const seriesByLead = {};
+        leadArray.forEach((leadLabel, leadIndex) => {
+          const value = result?.[bandLabel]?.[statLabel]?.[leadLabel];
+          if (value != null) {
+            seriesByLead[leadDates[leadIndex]] = value; // keep the array — dot chart expects it
+          }
+        });
+        seriesByStat[statLabel] = seriesByLead;
+      });
+      seriesByBand[bandLabel] = seriesByBand[bandLabel] ?? seriesByStat;
+      seriesByBand[bandLabel] = seriesByStat;
+    });
+
+    return seriesByBand;
   };
 
   useEffect(() => {
@@ -158,6 +192,44 @@ export default function PointQuery({ key, id }) {
     };
   }, []);
 
+  // useEffect(() => {
+  //   if (!coords) return;
+
+  //   const abortController = new AbortController();
+  //   const { signal } = abortController;
+
+  //   setQueryStatus('loading');
+
+  //   if (timePeriod == 'forecast') {
+  //     queryCoordinates(coords, 'forecast', forecastDate, { signal })
+  //       .then((result) => {
+  //         if (!signal.aborted) setPlotData(result?.data);
+  //       })
+  //       // .then((result) => console.log(result))
+  //       .catch((error) => {
+  //         if (error.name !== 'AbortError') {
+  //           setQueryStatus('error');
+  //           console.error('Error querying forecast raster:', error);
+  //         }
+  //       });
+  //   } else {
+  //     queryCoordinates(coords)
+  //       .then((result) => {
+  //         if (!signal.aborted) setPlotData(result?.data);
+  //       })
+  //       .catch((error) => {
+  //         if (error.name !== 'AbortError') {
+  //           setQueryStatus('error');
+  //           console.error('Error querying historical raster:', error);
+  //         }
+  //       });
+  //   }
+
+  //   return () => {
+  //     abortController.abort(); // cancel pending request on cleanup
+  //   };
+  // }, [timePeriod, coords, forecastDate]);
+
   useEffect(() => {
     if (!coords) return;
 
@@ -167,11 +239,23 @@ export default function PointQuery({ key, id }) {
     setQueryStatus('loading');
 
     if (timePeriod == 'forecast') {
-      queryCoordinates(coords, 'forecast', forecastDate, { signal })
+      forecastRaster
+        .queryData(
+          { type: 'Point', coordinates: coords },
+          {
+            band: variableArray,
+            stat: confidenceArray,
+            time: forecastDate,
+            lead: leadArray,
+          }
+        )
         .then((result) => {
-          if (!signal.aborted) setPlotData(result?.data);
+          if (!signal.aborted) {
+            let formatted = formatForecastResult(result.query, leadDates);
+            // console.log(formatted)
+            setPlotData(formatted);
+          }
         })
-        // .then((result) => console.log(result))
         .catch((error) => {
           if (error.name !== 'AbortError') {
             setQueryStatus('error');
@@ -179,9 +263,19 @@ export default function PointQuery({ key, id }) {
           }
         });
     } else {
-      queryCoordinates(coords)
+      historicalRaster
+        .queryData(
+          { type: 'Point', coordinates: coords },
+          {
+            band: variableArray,
+            time: historicalDates,
+          }
+        )
         .then((result) => {
-          if (!signal.aborted) setPlotData(result?.data);
+          if (!signal.aborted) {
+            console.log(result.query);
+            // setPlotData(result.query)
+          }
         })
         .catch((error) => {
           if (error.name !== 'AbortError') {
@@ -195,6 +289,29 @@ export default function PointQuery({ key, id }) {
       abortController.abort(); // cancel pending request on cleanup
     };
   }, [timePeriod, coords, forecastDate]);
+
+  // const historicalRaster = useStore((state) => state.historicalRaster);
+  // const forecastRaster = useStore((state) => state.forecastRaster);
+
+  // const fetchCountrySeries = useCallback(async () => {
+  //   if (!historicalRaster || !forecastRaster) return;
+
+  //   try {
+  //     setQueryStatus('loading');
+
+  //     // both requests in flight simultaneously — each fetches its own chunks
+  //     const [historicalResult, forecastResult] = await Promise.all([
+  //       historicalRaster.queryData(selector),
+  //       forecastRaster.queryData(selector),
+  //     ]);
+
+  //     setQueryStatus('success');
+  //     // combine for the chart — e.g., concatenated time axis
+  //     setChartData({ historical: historicalResult, forecast: forecastResult });
+  //   } catch (error) {
+  //     setQueryStatus('error');
+  //   }
+  // }, [historicalRaster, forecastRaster,]);
 
   return (
     <Box

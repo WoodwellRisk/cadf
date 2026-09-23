@@ -81,6 +81,7 @@ const createForecastDates = () => {
     forecastDates: forecastDates,
     forecastDate: maxDate,
     forecastSliderIndex: forecastDates.length - 1,
+    leadDates: generateLeadDates(maxDate),
   };
 };
 
@@ -128,8 +129,8 @@ export const useStore = create((set, get) => ({
   variableIdx: 0,
   setVariableIdx: (variableIdx) => set({ variableIdx }),
 
-  confidenceArray: [5, 20, 50, 80, 95],
-  confidence: 50,
+  confidenceArray: ['5', '20', '50', '80', '95'],
+  confidence: '50',
   setConfidence: (confidence) => set({ confidence }),
 
   confidenceIdx: 2,
@@ -158,6 +159,7 @@ export const useStore = create((set, get) => ({
   setForecastSliderIndex: (forecastSliderIndex) => set({ forecastSliderIndex }),
 
   // this is for the secondary forecast slider, 'target' date
+  leadArray: [1, 2, 3, 4, 5, 6],
   lead: 1,
   setLead: (lead) => set({ lead }),
   leadIndex: 1,
@@ -171,7 +173,7 @@ export const useStore = create((set, get) => ({
   //     timePeriod: timePeriod,
   //   });
   // },
-  timePeriod: 'historical',
+  timePeriod: 'forecast',
   setTimePeriod: (timePeriod) => set({ timePeriod }),
 
   showTimeError: false,
@@ -267,8 +269,11 @@ export const useStore = create((set, get) => ({
     return [climRanges[variable].min, climRanges[variable].max];
   },
 
-  raster: { current: null },
-  setRaster: (ref) => set((state) => ({ raster: ref })),
+  historicalRaster: null,
+  setHistoricalRaster: (layer) => set({ historicalRaster: layer }),
+
+  forecastRaster: null,
+  setForecastRaster: (layer) => set({ forecastRaster: layer }),
 
   showCharts: false,
   setShowCharts: (showCharts) => set({ showCharts }),
@@ -292,6 +297,7 @@ export const useStore = create((set, get) => ({
   showLakesLayer: true,
   setShowLakesLayer: (showLakesLayer) => set({ showLakesLayer }),
 
+  // slider component
   sliding: false,
   setSliding: (sliding) => set({ sliding }),
 

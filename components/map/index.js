@@ -16,7 +16,8 @@ export const Map = () => {
 
   const zoom = useStore((state) => state.zoom);
   const timePeriod = useStore((state) => state.timePeriod);
-  const setRaster = useStore((state) => state.setRaster);
+  const setHistoricalRaster = useStore((state) => state.setHistoricalRaster);
+  const setForecastRaster = useStore((state) => state.setForecastRaster);
 
   const showLandLayer = useStore((state) => state.showLandLayer);
   const showLakesLayer = useStore((state) => state.showLakesLayer);
@@ -37,8 +38,18 @@ export const Map = () => {
         />
       )} */}
 
-      {timePeriod == 'historical' && <HistoricalRaster id={`raster`} setRaster={setRaster} />}
-      {timePeriod == 'forecast' && <ForecastRaster id={`raster`} setRaster={setRaster} />}
+      <HistoricalRaster
+        id={`historical-raster`}
+        opacity={timePeriod == 'forecast' ? 0 : 1}
+        setRaster={setHistoricalRaster}
+      />
+
+      <ForecastRaster
+        id={`forecast-raster`}
+        layerType={'viz'}
+        opacity={timePeriod == 'forecast' ? 1 : 0}
+        setRaster={setForecastRaster}
+      />
 
       {showLakesLayer && (
         <>

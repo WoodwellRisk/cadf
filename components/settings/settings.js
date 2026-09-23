@@ -49,10 +49,26 @@ export default function Settings() {
   // const [maxSliderIndex, setMaxSliderIndex] = useState(forecastDates.length - 1);
   // const [minSliderYear, setMinSliderYear] = useState(Number(forecastDates.at(0).split('-')[0]));
   // const [maxSliderYear, setMaxSliderYear] = useState(Number(forecastDates.at(-1).split('-')[0]));
-  const [sliderIndex, setSliderIndex] = useState(historicalDates.length - 1);
-  const [maxSliderIndex, setMaxSliderIndex] = useState(historicalDates.length - 1);
-  const [minSliderYear, setMinSliderYear] = useState(Number(historicalDates.at(0).split('-')[0]));
-  const [maxSliderYear, setMaxSliderYear] = useState(Number(historicalDates.at(-1).split('-')[0]));
+  // const [sliderIndex, setSliderIndex] = useState(historicalDates.length - 1);
+  // const [maxSliderIndex, setMaxSliderIndex] = useState(historicalDates.length - 1);
+  // const [minSliderYear, setMinSliderYear] = useState(Number(historicalDates.at(0).split('-')[0]));
+  // const [maxSliderYear, setMaxSliderYear] = useState(Number(historicalDates.at(-1).split('-')[0]));
+  const [sliderIndex, setSliderIndex] = useState(
+    timePeriod == 'historical' ? historicalDates.length - 1 : forecastDates.length - 1
+  );
+  const [maxSliderIndex, setMaxSliderIndex] = useState(
+    timePeriod == 'historical' ? historicalDates.length - 1 : forecastDates.length - 1
+  );
+  const [minSliderYear, setMinSliderYear] = useState(
+    timePeriod == 'historical'
+      ? Number(historicalDates.at(0).split('-')[0])
+      : Number(forecastDates.at(0).split('-')[0])
+  );
+  const [maxSliderYear, setMaxSliderYear] = useState(
+    timePeriod == 'historical'
+      ? Number(historicalDates.at(-1).split('-')[0])
+      : Number(forecastDates.at(-1).split('-')[0])
+  );
 
   const [defaultSkipYear, defaultSkipMonth, _] = maxHistoricalDate.split('-');
   const [skipMonth, setSkipMonth] = useState(defaultSkipMonth);

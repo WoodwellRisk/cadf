@@ -17,9 +17,9 @@ import { useStore } from '../../store/index';
 //     viz     (band, stat, time, lead, y, x)
 //     query   (band, stat, time, lead, y, x)
 
-const ForecastRaster = ({ id, setRaster }) => {
-  const zarrLayerRef = useRef(null);
-  const removed = useRef(false);
+const ForecastRaster = ({ id, opacity, setRaster }) => {
+  const vizLayerRef = useRef(null);
+  const queryLayerRef = useRef(null);
   const { map } = useMap();
 
   const clim = useStore((state) => state.clim)();
@@ -32,49 +32,76 @@ const ForecastRaster = ({ id, setRaster }) => {
   useEffect(() => {
     if (!map) return;
 
-    map.on('remove', () => {
-      removed.current = true;
-    });
-  }, [map]);
-
-  useEffect(() => {
-    if (!map) return;
-
-    const zarrLayer = new ZarrLayer({
-      id: id,
+    const vizLayer = new ZarrLayer({
+      id: `${id}-viz`,
       source: source,
       zarrVersion: 3,
       variable: 'viz',
       clim: clim,
       colormap: colormap,
-      selector: { band: variable, stat: '50', time: time, lead: lead },
+      opacity: opacity,
+      selector: {
+        band: variable,
+        stat: '50',
+        time: time,
+        lead: lead,
+      },
     });
 
-    map.addLayer(zarrLayer);
-    zarrLayerRef.current = zarrLayer;
-    setRaster(zarrLayer);
+    const queryLayer = new ZarrLayer({
+      id: `${id}-query`,
+      source: source,
+      zarrVersion: 3,
+      variable: 'query',
+      clim: clim,
+      colormap: colormap,
+      opacity: 0,
+      selector: {
+        band: variable,
+        stat: '50',
+        time: time,
+        lead: lead,
+      },
+    });
+
+    map.addLayer(vizLayer);
+    map.addLayer(queryLayer);
+    vizLayerRef.current = vizLayer;
+    queryLayerRef.current = queryLayer;
+    setRaster(queryLayer);
 
     return () => {
-      let layerId = id;
-      if (map.getLayer(layerId)) map.removeLayer(layerId);
+      ['viz', 'query'].forEach((suffix) => {
+        const layerId = `${id}-${suffix}`;
+        if (map.getLayer(layerId)) map.removeLayer(layerId);
+      });
+      vizLayerRef.current = null;
+      queryLayerRef.current = null;
     };
   }, [map]);
 
   useEffect(() => {
-    if (!map || !zarrLayerRef.current) return;
-    let layer = zarrLayerRef.current;
+    if (!map || !vizLayerRef.current) return;
+    let layer = vizLayerRef.current;
 
     layer.setSelector({ band: variable, stat: '50', time: time, lead: lead });
   }, [map, variable, time, lead]);
 
   useEffect(() => {
-    if (!map || !zarrLayerRef.current) return;
-    let layer = zarrLayerRef.current;
+    if (!map || !vizLayerRef.current) return;
+    let layer = vizLayerRef.current;
 
     // change clim and colormap without re-rendering raster
     layer.setClim(clim);
     layer.setColormap(colormap);
   }, [map, clim, colormap]);
+
+  useEffect(() => {
+    if (!map || !vizLayerRef.current) return;
+    let layer = vizLayerRef.current;
+
+    layer.setOpacity(opacity);
+  }, [map, opacity]);
 
   return null;
 };
