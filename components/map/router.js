@@ -11,11 +11,16 @@ const Router = () => {
   const pathname = usePathname();
 
   const [mapReady, setMapReady] = useState(false);
-  const zoom = useStore((state) => state.zoom);
+
+  const defaultZoom = useStore((state) => state.initialZoom);
+  const minZoom = useStore((state) => state.minZoom);
+  const maxZoom = useStore((state) => state.maxZoom);
   const setZoom = useStore((state) => state.setZoom);
+
   const bounds = useStore((state) => state.bounds);
-  const center = useStore((state) => state.center);
+  const defaultCenter = useStore((state) => state.initialCenter);
   const setCenter = useStore((state) => state.setCenter);
+
   const variableArray = useStore((state) => state.variableArray);
   const variable = useStore((state) => state.variable);
   const setVariable = useStore((state) => state.setVariable);
@@ -48,55 +53,34 @@ const Router = () => {
   });
 
   const getInitialZoom = useCallback((url) => {
-    let initialZoom;
     let tempZoom = url.searchParams.get('zoom');
-
-    if (tempZoom != null && typeof parseFloat(tempZoom) == 'number' && parseFloat(tempZoom) > 0.0) {
-      initialZoom = tempZoom;
-    } else {
-      initialZoom = 3;
-    }
+    const parsed = tempZoom != null ? parseFloat(tempZoom) : NaN;
+    const isValid = !Number.isNaN(parsed) && parsed >= minZoom && parsed <= maxZoom;
+    const initialZoom = isValid ? parsed : defaultZoom;
 
     url.searchParams.set('zoom', initialZoom);
     return initialZoom;
   });
 
   const getInitialCenter = useCallback((url) => {
-    let initialCenter;
+    const tempCenter = url.searchParams.get('center');
+    const parsed = tempCenter != null ? tempCenter.split(',').map(parseFloat) : null;
 
-    // this makes sure that the center search param is in array format, so we don't need to check the type
-    let tempCenter = url.searchParams.get('center');
-    if (tempCenter == null) {
-      url.searchParams.set('center', '28.5,-1');
-      return [28.5, -1.0];
-    }
+    const [west, south, east, north] = bounds;
 
-    tempCenter = tempCenter.split(',').map((d) => parseFloat(d));
+    const isValid =
+      parsed != null &&
+      parsed.length === 2 &&
+      parsed.every((d) => !Number.isNaN(d)) &&
+      parsed[0] >= west &&
+      parsed[0] <= east &&
+      parsed[1] >= south &&
+      parsed[1] <= north;
 
-    if (
-      tempCenter.length == 2 &&
-      typeof tempCenter[0] == 'number' &&
-      !Number.isNaN(tempCenter[0]) &&
-      typeof tempCenter[1] == 'number' &&
-      !Number.isNaN(tempCenter[1])
-    ) {
-      // check to see if center is within east / west and north / south bounds
-      if (
-        tempCenter[0] > bounds[0] &&
-        tempCenter[0] < bounds[2] &&
-        tempCenter[1] > bounds[1] &&
-        tempCenter[1] < bounds[3]
-      ) {
-        initialCenter = tempCenter.toString();
-      } else {
-        initialCenter = '28.5,-1';
-      }
-    } else {
-      initialCenter = '28.5,-1';
-    }
+    const initialCenter = isValid ? parsed : defaultCenter;
 
-    url.searchParams.set('center', initialCenter);
-    return initialCenter.split(',').map((d) => parseFloat(d));
+    url.searchParams.set('center', initialCenter.join(','));
+    return initialCenter;
   });
 
   useEffect(() => {
@@ -135,7 +119,7 @@ const Router = () => {
 
     map.easeTo({
       center: savedCenter,
-      zoom: parseFloat(savedZoom),
+      zoom: savedZoom,
       duration: 0,
     });
 

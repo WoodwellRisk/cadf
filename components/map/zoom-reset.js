@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useState } from 'react';
 import { keyframes } from '@emotion/react';
 import { IconButton } from 'theme-ui';
 import { useBreakpointIndex } from '@theme-ui/match-media';
@@ -11,11 +11,14 @@ import { useStore } from '../store/index';
 const ZoomReset = () => {
   const isWide = useBreakpointIndex() > 0;
   const { map } = useMap();
-  const resetButton = useRef(null);
 
   const initialZoom = useStore((state) => state.initialZoom);
   const initialCenter = useStore((state) => state.initialCenter);
   const { zoom, center } = useMapView();
+  const atInitialConditions =
+    zoom === initialZoom && center[0] === initialCenter[0] && center[1] === initialCenter[1];
+
+  const [spinning, setSpinning] = useState(false);
 
   const spin = keyframes({
     from: {
@@ -26,42 +29,28 @@ const ZoomReset = () => {
     },
   });
 
-  const handleResetClick = useCallback((event) => {
-    // reset map
-    resetButton.current = event.target;
-    resetButton.current.classList.add('spin');
+  const handleResetClick = useCallback(() => {
+    if (atInitialConditions) return;
 
-    if (zoom != initialZoom && center != initialCenter) {
-      console.log(zoom);
-      console.log(center);
-      console.log();
-
-      map.flyTo({
-        center: initialCenter,
-        zoom: initialZoom,
-      });
-
-      console.log(zoom);
-      console.log(center);
-      console.log();
-    }
+    setSpinning(true);
+    map.flyTo({
+      center: initialCenter,
+      zoom: initialZoom,
+    });
+    [map, atInitialConditions, initialCenter, initialZoom];
   });
 
-  const handleAnimationEnd = useCallback(() => {
-    resetButton.current.classList.remove('spin');
-  });
-
-  const atInitialConditions =
-    zoom === initialZoom && center[0] === initialCenter[0] && center[1] === initialCenter[1];
+  if (!map) return null;
 
   return (
     <IconButton
       aria-label="Reset map extent"
       onClick={handleResetClick}
-      onAnimationEnd={handleAnimationEnd}
+      onAnimationEnd={() => setSpinning(false)}
       disabled={atInitialConditions}
       sx={{
         display: isWide ? 'initial' : 'none',
+        svg: spinning ? { animation: `${spin.toString()} 1s` } : {},
         stroke: 'primary',
         color: atInitialConditions ? 'muted' : 'primary',
         cursor: 'pointer',
@@ -72,9 +61,6 @@ const ZoomReset = () => {
         borderStyle: 'solid',
         borderColor: atInitialConditions ? 'muted' : 'primary',
         bg: 'background',
-        '.spin': {
-          animation: `${spin.toString()} 1s`,
-        },
       }}
     >
       <Reset sx={{ strokeWidth: 1.75, width: 20, height: 20 }} />
