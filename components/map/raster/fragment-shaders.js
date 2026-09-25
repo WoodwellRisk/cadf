@@ -112,6 +112,15 @@ const flatShader = `
     float dist = distance(pixelSpace, texelCenter);
     float maxDist = 0.5;
 
+    // float ringInner = maxDist * 0.85;
+    // float ringOuter = maxDist * 0.95;
+
+    // if (dist >= ringInner && dist <= ringOuter) {
+    //   fragColor = vec4(0.0, 0.0, 0.0, opacity);
+    // } else {
+    //   fragColor = baseColor;
+    // }
+
     // radius settings
     // in the future, we will need to base radiusFactor on the 'agree' variable in our data
     // circle fills 90% of the pixel

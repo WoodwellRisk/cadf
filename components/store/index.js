@@ -102,6 +102,22 @@ const createHistoricalDates = () => {
   };
 };
 
+const TIME_PERIOD_BANDS = {
+  historical: ['percentile', 'total'],
+  forecast: ['percentile', 'total'],
+  difference: ['bias'],
+};
+
+const getVariable = (candidateVariable, timePeriod) => {
+  const validBands = TIME_PERIOD_BANDS[timePeriod];
+  const variable = validBands.includes(candidateVariable) ? candidateVariable : validBands[0];
+  return {
+    variable,
+    variableIdx: validBands.indexOf(variable),
+    variableArray: validBands,
+  };
+};
+
 export const useStore = create((set, get) => ({
   // map container state
   initialZoom: 3,
@@ -122,12 +138,40 @@ export const useStore = create((set, get) => ({
   // bounds: [-11.0, -31.5, 64.0, 35.0],
   bounds: [-50.0, -41.5, 95.0, 45.0],
 
-  variableArray: ['percentile', 'total'],
-  variable: 'percentile',
-  setVariable: (variable) => set({ variable }),
+  // settings and raster variables
+  // timePeriodOptions: { historical: false, forecast: true },
+  // setTimePeriodOptions: (newOptions) => {
+  //   const timePeriod = Object.keys(newOptions).find((key) => newOptions[key] === true);
+  //   set({
+  //     timePeriodOptions: newOptions,
+  //     timePeriod: timePeriod,
+  //   });
+  // },
+  timePeriod: 'historical',
+  setTimePeriod: (timePeriod) => {
+    const currentVariable = get().variable;
+    const validBands = TIME_PERIOD_BANDS[timePeriod];
+    const safeVariable = validBands.includes(currentVariable) ? currentVariable : validBands[0];
+    set({
+      timePeriod: timePeriod,
+      variable: safeVariable,
+      variableIdx: validBands.indexOf(safeVariable),
+      variableArray: validBands,
+    });
+  },
 
-  variableIdx: 0,
-  setVariableIdx: (variableIdx) => set({ variableIdx }),
+  ...getVariable('percentile', 'historical'),
+
+  setVariable: (variable) => {
+    const timePeriod = get().timePeriod;
+    const validBands = TIME_PERIOD_BANDS[timePeriod];
+    const safeVariable = validBands.includes(variable) ? variable : validBands[0];
+    set({
+      variable: safeVariable,
+      variableIdx: validBands.indexOf(safeVariable),
+      variableArray: validBands,
+    });
+  },
 
   confidenceArray: ['5', '20', '50', '80', '95'],
   confidence: '50',
@@ -135,11 +179,6 @@ export const useStore = create((set, get) => ({
 
   confidenceIdx: 2,
   setConfidenceIdx: (confidenceIdx) => set({ confidenceIdx }),
-
-  band: () => {
-    const { variable, confidence } = get();
-    return `${variable}_${confidence}`;
-  },
 
   // handle dates
   ...createHistoricalDates(),
@@ -165,16 +204,26 @@ export const useStore = create((set, get) => ({
   leadIndex: 1,
   setLeadIndex: (leadIndex) => set({ leadIndex }),
 
-  // timePeriodOptions: { historical: false, forecast: true },
-  // setTimePeriodOptions: (newOptions) => {
-  //   const timePeriod = Object.keys(newOptions).find((key) => newOptions[key] === true);
-  //   set({
-  //     timePeriodOptions: newOptions,
-  //     timePeriod: timePeriod,
-  //   });
-  // },
-  timePeriod: 'forecast',
-  setTimePeriod: (timePeriod) => set({ timePeriod }),
+  sliding: false,
+  setSliding: (sliding) => set({ sliding }),
+
+  setHistoricalSliderIndex: (index) => {
+    const { sliding, historicalDates } = get();
+    const idx = Number(index);
+    set({
+      historicalSliderIndex: idx,
+      ...(!sliding ? { time: historicalDates.at(idx) } : {}),
+    });
+  },
+
+  setForecastSliderIndex: (index) => {
+    const { sliding, forecastDates } = get();
+    const idx = Number(index);
+    set({
+      forecastSliderIndex: idx,
+      ...(!sliding ? { forecastDate: forecastDates.at(idx) } : {}),
+    });
+  },
 
   showTimeError: false,
   setShowTimeError: (showTimeError) => set({ showTimeError }),
@@ -257,12 +306,13 @@ export const useStore = create((set, get) => ({
   ],
   colormap: () => {
     const { variable, redteal, cool } = get();
-    return variable == 'percentile' ? redteal : cool;
+    return variable == 'percentile' || variable == 'bias' ? redteal : cool;
   },
 
   climRanges: {
     percentile: { min: 0.0, max: 100.0 },
     total: { min: 0.0, max: 300.0 },
+    bias: { min: -150.0, max: 150.0 },
   },
   clim: () => {
     const { climRanges, variable } = get();
@@ -274,6 +324,9 @@ export const useStore = create((set, get) => ({
 
   forecastRaster: null,
   setForecastRaster: (layer) => set({ forecastRaster: layer }),
+
+  differenceRaster: null,
+  setDifferenceRaster: (layer) => set({ differenceRaster: layer }),
 
   showCharts: false,
   setShowCharts: (showCharts) => set({ showCharts }),
@@ -297,10 +350,6 @@ export const useStore = create((set, get) => ({
   showLakesLayer: true,
   setShowLakesLayer: (showLakesLayer) => set({ showLakesLayer }),
 
-  // slider component
-  sliding: false,
-  setSliding: (sliding) => set({ sliding }),
-
   showDesktopSettings: true,
   setShowDesktopSettings: (showDesktopSettings) => set({ showDesktopSettings }),
 
@@ -316,6 +365,7 @@ export const useStore = create((set, get) => ({
   showOverlays: false,
   setShowOverlays: (showOverlays) => set({ showOverlays }),
 
-  defaultLabels: { percentile: 'Percentile', total: 'Monthly total' },
-  defaultUnits: { percentile: '(%)', total: '(mm)' },
+  // colorbar labels and units
+  defaultLabels: { percentile: 'Percentile', total: 'Monthly total', bias: 'Relative bias' },
+  defaultUnits: { percentile: '(%)', total: '(mm)', bias: '(%)' },
 }));

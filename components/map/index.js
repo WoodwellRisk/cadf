@@ -18,6 +18,7 @@ export const Map = () => {
   const timePeriod = useStore((state) => state.timePeriod);
   const setHistoricalRaster = useStore((state) => state.setHistoricalRaster);
   const setForecastRaster = useStore((state) => state.setForecastRaster);
+  const setDifferenceRaster = useStore((state) => state.setDifferenceRaster);
 
   const showLandLayer = useStore((state) => state.showLandLayer);
   const showLakesLayer = useStore((state) => state.showLakesLayer);
@@ -38,18 +39,29 @@ export const Map = () => {
         />
       )} */}
 
-      <HistoricalRaster
-        id={`historical-raster`}
-        opacity={timePeriod == 'forecast' ? 0 : 1}
-        setRaster={setHistoricalRaster}
-      />
+      {timePeriod !== 'difference' && (
+        <>
+          <HistoricalRaster
+            id={`historical-raster`}
+            opacity={timePeriod == 'forecast' ? 0 : 1}
+            setRaster={setHistoricalRaster}
+          />
 
-      <ForecastRaster
-        id={`forecast-raster`}
-        layerType={'viz'}
-        opacity={timePeriod == 'forecast' ? 1 : 0}
-        setRaster={setForecastRaster}
+          <ForecastRaster
+            id={`forecast-raster`}
+            opacity={timePeriod == 'forecast' ? 1 : 0}
+            setRaster={setForecastRaster}
+          />
+        </>
+      )}
+
+      {/* {timePeriod === 'difference' && (
+      <DifferenceRaster
+        id={`difference-raster`}
+        opacity={timePeriod == 'difference' ? 1 : 0}
+        setRaster={setDifferenceRaster}
       />
+    )} */}
 
       {showLakesLayer && (
         <>

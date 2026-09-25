@@ -1,12 +1,14 @@
 import { useEffect, useRef } from 'react';
 import { ZarrLayer } from '@carbonplan/zarr-layer';
 import { useMap } from '../map-provider';
+import { useShallow } from 'zustand/react/shallow';
+
 import { useStore } from '../../store/index';
 
 // This component expects input data in the format:
 // Dimensions: {'band': 2, 'time': ..., 'y': ..., 'x': ...}
 // Coordinates:
-//   * time         (time) <U10 '2021-01-01' '2021-02-01' ... '2024-12-01'
+//   * time         (time) object '2021-01-01' '2021-02-01' ... '2024-12-01'
 //   * y            (y) float64 0.0 0.25 0.5 0.75 1.0 ... 4.25 4.5 4.75 5.0
 //   * x            (x) float64 15.0 15.25 15.5 15.75 ... 19.5 19.75 20.0
 //   * band         (band) object 'total' 'percentile'
@@ -20,12 +22,11 @@ const HistoricalRaster = ({ id, opacity, setRaster }) => {
   const queryLayerRef = useRef(null);
   const { map } = useMap();
 
-  const clim = useStore((state) => state.clim)();
-  const colormap = useStore((state) => state.colormap)();
   const variable = useStore((state) => state.variable);
+  const clim = useStore(useShallow((state) => state.clim()));
+  const colormap = useStore(useShallow((state) => state.colormap()));
   const time = useStore((state) => state.time);
-
-  const source = `https://storage.googleapis.com/cadf/zarr/h-topozarr-3-viz-query.zarr`;
+  const source = `https://storage.googleapis.com/cadf/zarr/historical.zarr`;
 
   useEffect(() => {
     if (!map) return;

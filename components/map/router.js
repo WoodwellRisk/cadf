@@ -24,19 +24,9 @@ const Router = () => {
   const variableArray = useStore((state) => state.variableArray);
   const variable = useStore((state) => state.variable);
   const setVariable = useStore((state) => state.setVariable);
-  const setVariableIdx = useStore((state) => state.setVariableIdx);
   // const confidence = useStore((state) => state.confidence);
   // const setConfidence = useStore((state) => state.setConfidence);
   // const setConfidenceIdx = useStore((state) => state.setConfidenceIdx);
-
-  // const verifySearchParams = useCallback((url) => {
-  //   // check to see if there are other search params that shouldn't be there
-  //   url.searchParams.forEach(function (value, key) {
-  //     if (!['layer'].includes(key)) {
-  //       url.searchParams.delete(key);
-  //     }
-  //   });
-  // });
 
   const getInitialLayer = useCallback((url) => {
     let initialLayer;
@@ -113,7 +103,6 @@ const Router = () => {
     }
 
     setVariable(savedVariable);
-    setVariableIdx(variableArray.indexOf(savedVariable));
     setZoom(savedZoom);
     setCenter(savedCenter);
 

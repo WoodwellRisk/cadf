@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Box } from 'theme-ui';
 import { useBreakpointIndex } from '@theme-ui/match-media';
 import { Colorbar as ColorbarComponent } from '@carbonplan/components';
