@@ -43,7 +43,7 @@ export const generateLeadDates = (initializationDate, numLeads = 6) =>
   generateDates(initializationDate, arrayRange(1, numLeads + 1, 1));
 
 // https://stackoverflow.com/a/15158873
-const getDifferenceInMonths = (startDateString, endDateString) => {
+export const getDifferenceInMonths = (startDateString, endDateString) => {
   let startDate = new Date(startDateString);
   let endDate = new Date(endDateString);
 
@@ -333,6 +333,9 @@ export const useStore = create((set, get) => ({
 
   filterCoordinates: [],
   setFilterCoordinates: (filterCoordinates) => set({ filterCoordinates }),
+
+  coords: [15.7, 2.6],
+  setCoords: (coords) => set({ coords }),
 
   plotData: {},
   setPlotData: (plotData) => set({ plotData, queryStatus: 'success' }),

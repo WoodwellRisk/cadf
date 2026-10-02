@@ -24,6 +24,9 @@ export default function PointQuery({ key, id }) {
   const leadArray = useStore((state) => state.leadArray);
   const leadDates = useStore((state) => state.leadDates);
   const historicalDates = useStore((state) => state.historicalDates);
+
+  const coords = useStore((state) => state.coords);
+  const setCoords = useStore((state) => state.setCoords);
   const setPlotData = useStore((state) => state.setPlotData);
   const setQueryStatus = useStore((state) => state.setQueryStatus);
 
@@ -34,12 +37,6 @@ export default function PointQuery({ key, id }) {
   function toTwoDecimalPlaces(num) {
     return parseFloat(roundToNearest025(num).toFixed(2));
   }
-
-  const queryPoint = { lng: 15.7, lat: 2.6 };
-  const [coords, setCoords] = useState([
-    toTwoDecimalPlaces(queryPoint['lng']),
-    toTwoDecimalPlaces(queryPoint['lat']),
-  ]);
 
   const [coordinates, setCoordinates] = useState([
     `Longitude: ${coords[0]}`,
@@ -62,8 +59,6 @@ export default function PointQuery({ key, id }) {
 
   const formatForecastResult = (result, leadDates) => {
     const seriesByBand = {};
-
-    console.log(result);
 
     variableArray.forEach((bandLabel) => {
       const seriesByStat = {};
@@ -273,8 +268,7 @@ export default function PointQuery({ key, id }) {
         )
         .then((result) => {
           if (!signal.aborted) {
-            console.log(result.query);
-            // setPlotData(result.query)
+            setPlotData(result.query);
           }
         })
         .catch((error) => {

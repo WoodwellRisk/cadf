@@ -9,6 +9,9 @@ import { useStore } from '../store/index';
 
 export default function DownloadChartButton() {
   const variable = useStore((state) => state.variable);
+  const timePeriod = useStore((state) => state.timePeriod);
+  const time = useStore((state) => state.time);
+  const coords = useStore((state) => state.coords);
 
   // Modified from: https://observablehq.com/@mbostock/saving-svg
   const serialize = (svg) => {
@@ -66,9 +69,22 @@ export default function DownloadChartButton() {
       context.canvas.toBlob(resolve);
       const pngDataUrl = canvas.toDataURL('image/png');
 
+      const timePeriodLabel = timePeriod !== 'difference' ? timePeriod : 'forecast';
+
+      const variableLabel =
+        variable === 'percentile'
+          ? 'water-balance-percentile'
+          : variable === 'total'
+            ? 'total-monthly-precipitation'
+            : 'error';
+
       const a = document.createElement('a');
       a.href = pngDataUrl;
-      a.download = `${variable}.png`;
+      // examples:
+      // 'historical-water-balance-percentile-2024-12-01-15.7-2.6.png'
+      // 'forecast-total-monthly-precipitation-2024-12-01-15.7-2.6.png'
+      // 'forecast-error-2024-12-01-15.7-2.6.png'
+      a.download = `${timePeriodLabel}-${variableLabel}-${time}-${coords[0]}-${coords[1]}.png`;
       a.click();
       a.remove();
     };

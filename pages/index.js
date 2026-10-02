@@ -7,7 +7,12 @@ import { DesktopSettings, MobileSettings } from '../components/settings/index';
 import { Map } from '../components/map/index';
 import { About } from '../components/about/index';
 import { Colorbar } from '../components/colorbar/index';
-import { ChartContainer, DotChart, DownloadChartButton } from '../components/charts/index';
+import {
+  ChartContainer,
+  DotChart,
+  DownloadChartButton,
+  TimeseriesChart,
+} from '../components/charts/index';
 import { useStore } from '../components/store/index';
 
 export default function Index() {
@@ -32,12 +37,6 @@ export default function Index() {
     }
   }, [isWide]);
 
-  useEffect(() => {
-    if (timePeriod == 'historical') {
-      setShowCharts(false);
-    }
-  }, [timePeriod]);
-
   return (
     <>
       <Meta />
@@ -60,7 +59,8 @@ export default function Index() {
                SVGs that span the entire width and height of the ChartContainer component.
              */}
               <ChartContainer>
-                <DotChart />
+                {timePeriod == 'historical' && <TimeseriesChart />}
+                {timePeriod == 'forecast' && <DotChart />}
               </ChartContainer>
 
               {plotData && Object.keys(plotData).length > 0 && <DownloadChartButton />}

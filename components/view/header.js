@@ -41,7 +41,7 @@ export default function Header() {
     },
     'charts-toggle': {
       // stroke: showMenu ? alpha('primary', 0.75) : 'primary',
-      display: isWide && timePeriod == 'forecast' ? 'initial' : 'none',
+      display: isWide ? 'initial' : 'none',
       // display: isWide ? 'initial' : 'none',
       stroke: 'primary',
       cursor: !showMenu ? 'pointer' : 'not-allowed',

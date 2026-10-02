@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect, useMemo } from 'react';
+import { useRef, useMemo } from 'react';
 import { Box, Spinner } from 'theme-ui';
 import * as d3 from 'd3';
 
@@ -37,6 +37,7 @@ export default function DotChart() {
   const paddingBottom = 50;
   const paddingRight = 20;
   const extraPaddingX = 10;
+  const extraPaddingY = 10;
   const paddingXLabel = 5;
 
   // x axis
@@ -45,12 +46,9 @@ export default function DotChart() {
     .domain([0, varMax])
     .range([paddingLeft, width - paddingRight - extraPaddingX]); // leave space for y‑axis labels
 
-  const xAxis = d3.axisBottom(xScale);
-  if (variable == 'percentile') {
-    xAxis.tickValues([0, 25, 50, 75, 100]);
-  } else {
-    xAxis.tickValues([0, 50, 100, 150, 200, 250, 300]);
-  }
+  const xTicks =
+    variable === 'percentile' ? [0, 25, 50, 75, 100] : [0, 50, 100, 150, 200, 250, 300];
+  const xAxis = d3.axisBottom(xScale).tickValues(xTicks);
 
   // y axis
   let datesJS = leadDates.map((t) => {
@@ -163,7 +161,7 @@ export default function DotChart() {
         {/* this ensures that the svg or png has a white background */}
         <rect width={'100%'} height={'100%'} fill={'background'} />
 
-        <g id={'x-axis'} transform={`translate(${extraPaddingX}, ${height - paddingBottom})`}>
+        <g id={'x-axis'} transform={`translate(${extraPaddingY}, ${height - paddingBottom})`}>
           {/* axis line */}
           <line
             key={`x-axis-line`}
@@ -305,14 +303,7 @@ export default function DotChart() {
             justifyContent: 'center',
           }}
         >
-          <Spinner
-            size={35}
-            strokeWidth={3}
-            // sx={{
-            // color: 'gray',
-            // opacity: 0.7,
-            // }}
-          />
+          <Spinner size={35} strokeWidth={3} />
         </Box>
       )}
     </Box>
