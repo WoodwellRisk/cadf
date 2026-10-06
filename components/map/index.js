@@ -4,7 +4,7 @@ import MapProvider from './map-provider';
 import Basemap from './basemap';
 import Fill from './fill';
 import Line from './line';
-import { HistoricalRaster, ForecastRaster } from './raster/index';
+import { HistoricalRaster, ForecastRaster, DifferenceRaster } from './raster/index';
 import { PointQuery } from './query/index';
 import Router from './router';
 import ZoomReset from './zoom-reset';
@@ -39,29 +39,23 @@ export const Map = () => {
         />
       )} */}
 
-      {timePeriod !== 'difference' && (
-        <>
-          <HistoricalRaster
-            id={`historical-raster`}
-            opacity={timePeriod == 'forecast' ? 0 : 1}
-            setRaster={setHistoricalRaster}
-          />
+      <HistoricalRaster
+        id={`historical-raster`}
+        opacity={timePeriod === 'historical' ? 1 : 0}
+        setRaster={setHistoricalRaster}
+      />
 
-          <ForecastRaster
-            id={`forecast-raster`}
-            opacity={timePeriod == 'forecast' ? 1 : 0}
-            setRaster={setForecastRaster}
-          />
-        </>
-      )}
+      <ForecastRaster
+        id={`forecast-raster`}
+        opacity={timePeriod === 'forecast' ? 1 : 0}
+        setRaster={setForecastRaster}
+      />
 
-      {/* {timePeriod === 'difference' && (
       <DifferenceRaster
         id={`difference-raster`}
-        opacity={timePeriod == 'difference' ? 1 : 0}
+        opacity={timePeriod === 'difference' ? 1 : 0}
         setRaster={setDifferenceRaster}
       />
-    )} */}
 
       {showLakesLayer && (
         <>

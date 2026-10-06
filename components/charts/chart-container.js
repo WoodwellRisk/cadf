@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Box } from 'theme-ui';
+import { Box, Spinner } from 'theme-ui';
 
 import { fontToDataUri } from './utils';
 import { useStore } from '../store/index';
@@ -7,6 +7,8 @@ import { useStore } from '../store/index';
 export default function ChartContainer({ children }) {
   const setGintoUri = useStore((state) => state.setGintoUri);
   const setGemeliUri = useStore((state) => state.setGemeliUri);
+
+  const queryStatus = useStore((state) => state.queryStatus);
 
   // change the path later on
   useEffect(() => {
@@ -49,6 +51,23 @@ export default function ChartContainer({ children }) {
         }}
       >
         {children}
+
+        {queryStatus === 'loading' && (
+          <Box
+            sx={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Spinner size={35} strokeWidth={3} />
+          </Box>
+        )}
       </Box>
     </Box>
   );

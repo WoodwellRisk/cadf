@@ -26,7 +26,7 @@ const Router = () => {
   const setVariable = useStore((state) => state.setVariable);
   // const confidence = useStore((state) => state.confidence);
   // const setConfidence = useStore((state) => state.setConfidence);
-  // const setConfidenceIdx = useStore((state) => state.setConfidenceIdx);
+  // const setConfidenceIndex = useStore((state) => state.setConfidenceIndex);
 
   const getInitialLayer = useCallback((url) => {
     let initialLayer;

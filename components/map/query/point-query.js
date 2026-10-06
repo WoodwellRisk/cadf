@@ -14,8 +14,9 @@ export default function PointQuery({ key, id }) {
   const sourceIdRef = useRef();
   const layerIdRef = useRef();
 
-  const historicalRaster = useStore((state) => state.historicalRaster);
+  const differenceRaster = useStore((state) => state.differenceRaster);
   const forecastRaster = useStore((state) => state.forecastRaster);
+  const historicalRaster = useStore((state) => state.historicalRaster);
 
   const variableArray = useStore((state) => state.variableArray);
   const confidenceArray = useStore((state) => state.confidenceArray);
@@ -187,44 +188,6 @@ export default function PointQuery({ key, id }) {
     };
   }, []);
 
-  // useEffect(() => {
-  //   if (!coords) return;
-
-  //   const abortController = new AbortController();
-  //   const { signal } = abortController;
-
-  //   setQueryStatus('loading');
-
-  //   if (timePeriod == 'forecast') {
-  //     queryCoordinates(coords, 'forecast', forecastDate, { signal })
-  //       .then((result) => {
-  //         if (!signal.aborted) setPlotData(result?.data);
-  //       })
-  //       // .then((result) => console.log(result))
-  //       .catch((error) => {
-  //         if (error.name !== 'AbortError') {
-  //           setQueryStatus('error');
-  //           console.error('Error querying forecast raster:', error);
-  //         }
-  //       });
-  //   } else {
-  //     queryCoordinates(coords)
-  //       .then((result) => {
-  //         if (!signal.aborted) setPlotData(result?.data);
-  //       })
-  //       .catch((error) => {
-  //         if (error.name !== 'AbortError') {
-  //           setQueryStatus('error');
-  //           console.error('Error querying historical raster:', error);
-  //         }
-  //       });
-  //   }
-
-  //   return () => {
-  //     abortController.abort(); // cancel pending request on cleanup
-  //   };
-  // }, [timePeriod, coords, forecastDate]);
-
   useEffect(() => {
     if (!coords) return;
 
@@ -247,7 +210,6 @@ export default function PointQuery({ key, id }) {
         .then((result) => {
           if (!signal.aborted) {
             let formatted = formatForecastResult(result.query, leadDates);
-            // console.log(formatted)
             setPlotData(formatted);
           }
         })
@@ -257,7 +219,7 @@ export default function PointQuery({ key, id }) {
             console.error('Error querying forecast raster:', error);
           }
         });
-    } else {
+    } else if (timePeriod == 'historical') {
       historicalRaster
         .queryData(
           { type: 'Point', coordinates: coords },
@@ -275,6 +237,30 @@ export default function PointQuery({ key, id }) {
           if (error.name !== 'AbortError') {
             setQueryStatus('error');
             console.error('Error querying historical raster:', error);
+          }
+        });
+    } else {
+      differenceRaster
+        .queryData(
+          { type: 'Point', coordinates: coords },
+          {
+            band: 'bias',
+            time: forecastDate,
+            lead: leadArray,
+          }
+        )
+        .then((result) => {
+          if (!signal.aborted) {
+            // since there is only a single band in the difference raster,
+            // we need to wrap the data in the variable name so that our
+            // checks in the chart component correctly knows when to plot data
+            setPlotData({ bias: { ...result.query } });
+          }
+        })
+        .catch((error) => {
+          if (error.name !== 'AbortError') {
+            setQueryStatus('error');
+            console.error('Error querying difference raster:', error);
           }
         });
     }

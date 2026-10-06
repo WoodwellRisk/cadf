@@ -1,6 +1,7 @@
 import ChartContainer from './chart-container';
-import DotChart from './dot';
+import Dot from './dot';
 import DownloadChartButton from './download-chart';
-import TimeseriesChart from './timeseries';
+import Scatter from './scatter';
+import Timeseries from './timeseries';
 
-export { ChartContainer, DotChart, DownloadChartButton, TimeseriesChart };
+export { ChartContainer, Dot, DownloadChartButton, Scatter, Timeseries };

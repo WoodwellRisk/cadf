@@ -9,9 +9,10 @@ import { About } from '../components/about/index';
 import { Colorbar } from '../components/colorbar/index';
 import {
   ChartContainer,
-  DotChart,
+  Dot,
   DownloadChartButton,
-  TimeseriesChart,
+  Scatter,
+  Timeseries,
 } from '../components/charts/index';
 import { useStore } from '../components/store/index';
 
@@ -59,8 +60,9 @@ export default function Index() {
                SVGs that span the entire width and height of the ChartContainer component.
              */}
               <ChartContainer>
-                {timePeriod == 'historical' && <TimeseriesChart />}
-                {timePeriod == 'forecast' && <DotChart />}
+                {timePeriod == 'historical' && <Timeseries />}
+                {timePeriod == 'forecast' && <Dot />}
+                {timePeriod == 'difference' && <Scatter />}
               </ChartContainer>
 
               {plotData && Object.keys(plotData).length > 0 && <DownloadChartButton />}

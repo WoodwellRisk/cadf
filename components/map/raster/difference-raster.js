@@ -23,9 +23,8 @@ const DifferenceRaster = ({ id, opacity, setRaster }) => {
   const queryLayerRef = useRef(null);
   const { map } = useMap();
 
-  const variable = useStore((state) => state.variable);
-  const clim = useStore(useShallow((state) => state.clim()));
-  const colormap = useStore(useShallow((state) => state.colormap()));
+  const clim = useStore(useShallow((state) => state.clim));
+  const colormap = useStore(useShallow((state) => state.colormap));
   const time = useStore((state) => state.time);
   const lead = useStore((state) => state.lead);
   const source = `https://storage.googleapis.com/cadf/zarr/difference.zarr`;
@@ -42,7 +41,7 @@ const DifferenceRaster = ({ id, opacity, setRaster }) => {
       colormap: colormap,
       opacity: opacity,
       selector: {
-        band: variable,
+        band: 'bias', // hardcoded
         time: time,
         lead: lead,
       },
@@ -57,7 +56,7 @@ const DifferenceRaster = ({ id, opacity, setRaster }) => {
       colormap: colormap,
       opacity: 0,
       selector: {
-        band: variable,
+        band: 'bias',
         time: time,
         lead: lead,
       },
@@ -83,8 +82,8 @@ const DifferenceRaster = ({ id, opacity, setRaster }) => {
     if (!map || !vizLayerRef.current) return;
     let layer = vizLayerRef.current;
 
-    layer.setSelector({ band: variable, time: time, lead: lead });
-  }, [map, variable, time, lead]);
+    layer.setSelector({ band: 'bias', time: time, lead: lead });
+  }, [map, time, lead]);
 
   useEffect(() => {
     if (!map || !vizLayerRef.current) return;

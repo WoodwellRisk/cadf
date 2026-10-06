@@ -2,12 +2,14 @@ import { create } from 'zustand';
 
 // const MIN_HISTORICAL_DATE = '1991-01-01';
 const MIN_HISTORICAL_DATE = '2021-01-01';
-// const MAX_HISTORICAL_DATE = '2026-07-01';
-// const MAX_HISTORICAL_DATE = '2025-09-01';
 const MAX_HISTORICAL_DATE = '2024-12-01';
+
 // const INITIAL_FORECAST_DATE = '2025-10-01';
 // const MIN_FORECAST_DATE = MIN_HISTORICAL_DATE;
 // const MAX_FORECAST_DATE = MAX_HISTORICAL_DATE;
+
+// const MIN_ERROR_DATE = ...;
+// const MAX_ERROR_DATE = ...;
 
 export const arrayRange = (start, end, step) => {
   let output = [];
@@ -60,16 +62,6 @@ export const getDifferenceInMonths = (startDateString, endDateString) => {
   );
 };
 
-// const createForecastDates = () => {
-//   let forecastDate = INITIAL_FORECAST_DATE;
-//   let monthsRange = arrayRange(0, 6, 1);
-
-//   return {
-//     forecastDate: forecastDate,
-//     forecastDates: generateDates(forecastDate, monthsRange),
-//   };
-// };
-
 const createForecastDates = () => {
   let minDate = MIN_HISTORICAL_DATE;
   let maxDate = MAX_HISTORICAL_DATE;
@@ -102,138 +94,7 @@ const createHistoricalDates = () => {
   };
 };
 
-const TIME_PERIOD_BANDS = {
-  historical: ['percentile', 'total'],
-  forecast: ['percentile', 'total'],
-  difference: ['bias'],
-};
-
-const getVariable = (candidateVariable, timePeriod) => {
-  const validBands = TIME_PERIOD_BANDS[timePeriod];
-  const variable = validBands.includes(candidateVariable) ? candidateVariable : validBands[0];
-  return {
-    variable,
-    variableIdx: validBands.indexOf(variable),
-    variableArray: validBands,
-  };
-};
-
-export const useStore = create((set, get) => ({
-  // map container state
-  initialZoom: 3,
-  zoom: 3,
-  setZoom: (zoom) => set({ zoom }),
-
-  // minZoom: 1,
-  minZoom: 2,
-  maxZoom: 7,
-
-  // this is for the initial map load
-  initialCenter: [28.5, -1.0],
-  center: [28.5, -1.0],
-  setCenter: (center) => set({ center }),
-
-  // https://docs.mapbox.com/mapbox-gl-js/example/fitbounds/
-  // [west, south, east, north]
-  // bounds: [-11.0, -31.5, 64.0, 35.0],
-  bounds: [-50.0, -41.5, 95.0, 45.0],
-
-  // settings and raster variables
-  // timePeriodOptions: { historical: false, forecast: true },
-  // setTimePeriodOptions: (newOptions) => {
-  //   const timePeriod = Object.keys(newOptions).find((key) => newOptions[key] === true);
-  //   set({
-  //     timePeriodOptions: newOptions,
-  //     timePeriod: timePeriod,
-  //   });
-  // },
-  timePeriod: 'historical',
-  setTimePeriod: (timePeriod) => {
-    const currentVariable = get().variable;
-    const validBands = TIME_PERIOD_BANDS[timePeriod];
-    const safeVariable = validBands.includes(currentVariable) ? currentVariable : validBands[0];
-    set({
-      timePeriod: timePeriod,
-      variable: safeVariable,
-      variableIdx: validBands.indexOf(safeVariable),
-      variableArray: validBands,
-    });
-  },
-
-  ...getVariable('percentile', 'historical'),
-
-  setVariable: (variable) => {
-    const timePeriod = get().timePeriod;
-    const validBands = TIME_PERIOD_BANDS[timePeriod];
-    const safeVariable = validBands.includes(variable) ? variable : validBands[0];
-    set({
-      variable: safeVariable,
-      variableIdx: validBands.indexOf(safeVariable),
-      variableArray: validBands,
-    });
-  },
-
-  confidenceArray: ['5', '20', '50', '80', '95'],
-  confidence: '50',
-  setConfidence: (confidence) => set({ confidence }),
-
-  confidenceIdx: 2,
-  setConfidenceIdx: (confidenceIdx) => set({ confidenceIdx }),
-
-  // handle dates
-  ...createHistoricalDates(),
-  setHistoricalDate: (historicalDate) => set({ historicalDate }),
-  setHistoricalSliderIndex: (historicalSliderIndex) => set({ historicalSliderIndex }),
-
-  // time: INITIAL_FORECAST_DATE,
-  time: MAX_HISTORICAL_DATE,
-  setTime: (time) => set({ time }),
-
-  // this is for the first forecast slider, 'initialization' date
-  ...createForecastDates(),
-  setForecastMonth: (forecastMonth) => set({ forecastMonth }),
-  // setForecastDate: (forecastDate) => set({ forecastDate }),
-  setForecastDate: (forecastDate) =>
-    set({ forecastDate, leadDates: generateLeadDates(forecastDate) }),
-  setForecastSliderIndex: (forecastSliderIndex) => set({ forecastSliderIndex }),
-
-  // this is for the secondary forecast slider, 'target' date
-  leadArray: [1, 2, 3, 4, 5, 6],
-  lead: 1,
-  setLead: (lead) => set({ lead }),
-  leadIndex: 1,
-  setLeadIndex: (leadIndex) => set({ leadIndex }),
-
-  sliding: false,
-  setSliding: (sliding) => set({ sliding }),
-
-  setHistoricalSliderIndex: (index) => {
-    const { sliding, historicalDates } = get();
-    const idx = Number(index);
-    set({
-      historicalSliderIndex: idx,
-      ...(!sliding ? { time: historicalDates.at(idx) } : {}),
-    });
-  },
-
-  setForecastSliderIndex: (index) => {
-    const { sliding, forecastDates } = get();
-    const idx = Number(index);
-    set({
-      forecastSliderIndex: idx,
-      ...(!sliding ? { forecastDate: forecastDates.at(idx) } : {}),
-    });
-  },
-
-  showTimeError: false,
-  setShowTimeError: (showTimeError) => set({ showTimeError }),
-
-  gintoUri: null,
-  setGintoUri: (gintoUri) => set({ gintoUri }),
-
-  gemeliUri: null,
-  setGemeliUri: (gemeliUri) => set({ gemeliUri }),
-
+const AVAILABLE_COLORMAPS = {
   // this is the 'icefire' palette from seaborn, but reversed
   icefire: [
     '#ffd4ac',
@@ -304,71 +165,206 @@ export const useStore = create((set, get) => ({
     '#A384CD',
     '#A771C5',
   ],
-  colormap: () => {
-    const { variable, redteal, cool } = get();
-    return variable == 'percentile' || variable == 'bias' ? redteal : cool;
-  },
+};
 
-  climRanges: {
-    percentile: { min: 0.0, max: 100.0 },
-    total: { min: 0.0, max: 300.0 },
-    bias: { min: -150.0, max: 150.0 },
-  },
-  clim: () => {
-    const { climRanges, variable } = get();
-    return [climRanges[variable].min, climRanges[variable].max];
-  },
+const COLORMAPS = {
+  percentile: AVAILABLE_COLORMAPS['redteal'],
+  total: AVAILABLE_COLORMAPS['cool'],
+  bias: AVAILABLE_COLORMAPS['redteal'],
+};
 
-  historicalRaster: null,
-  setHistoricalRaster: (layer) => set({ historicalRaster: layer }),
+const CLIMS = {
+  percentile: [0.0, 100.0],
+  total: [0.0, 300.0],
+  bias: [-100.0, 100.0],
+};
 
-  forecastRaster: null,
-  setForecastRaster: (layer) => set({ forecastRaster: layer }),
+const COLORBAR_LABELS = {
+  percentile: 'Percentile',
+  total: 'Monthly total',
+  bias: 'Relative bias',
+};
 
-  differenceRaster: null,
-  setDifferenceRaster: (layer) => set({ differenceRaster: layer }),
+const COLORBAR_UNITS = {
+  percentile: '(%)',
+  total: '(mm)',
+  bias: '(%)',
+};
 
-  showCharts: false,
-  setShowCharts: (showCharts) => set({ showCharts }),
+export const TIME_PERIOD_BANDS = {
+  historical: ['percentile', 'total'],
+  forecast: ['percentile', 'total'],
+  difference: ['bias'],
+};
 
-  filterCoordinates: [],
-  setFilterCoordinates: (filterCoordinates) => set({ filterCoordinates }),
+export const safeValue = (array, value) => {
+  return array.includes(value) ? value : array[0];
+};
 
-  coords: [15.7, 2.6],
-  setCoords: (coords) => set({ coords }),
+export const useStore = create((set, get) => {
+  const appState = (variable, timePeriod) => {
+    const variableArray = TIME_PERIOD_BANDS[timePeriod];
+    const safeVariable = safeValue(variableArray, variable);
 
-  plotData: {},
-  setPlotData: (plotData) => set({ plotData, queryStatus: 'success' }),
-  setQueryStatus: (status) => set({ queryStatus: status }),
+    return {
+      variableArray: variableArray,
+      variable: safeVariable,
+      variableIndex: variableArray.indexOf(safeVariable),
+      colormap: COLORMAPS[safeVariable],
+      clim: CLIMS[safeVariable],
+      colorbarLabel: COLORBAR_LABELS[safeVariable],
+      colorbarUnits: COLORBAR_UNITS[safeVariable],
+    };
+  };
 
-  showLandLayer: true,
-  setShowLandLayer: (showLandLayer) => set({ showLandLayer }),
+  return {
+    // map container state
+    initialZoom: 3,
+    zoom: 3,
+    setZoom: (zoom) => set({ zoom }),
 
-  showCountriesLayer: true,
-  setShowCountriesLayer: (showCountriesLayer) => set({ showCountriesLayer }),
+    // minZoom: 1,
+    minZoom: 2,
+    maxZoom: 7,
 
-  showStatesLayer: false,
-  setShowStatesLayer: (showStatesLayer) => set({ showStatesLayer }),
+    // this is for the initial map load
+    initialCenter: [28.5, -1.0],
+    center: [28.5, -1.0],
+    setCenter: (center) => set({ center }),
 
-  showLakesLayer: true,
-  setShowLakesLayer: (showLakesLayer) => set({ showLakesLayer }),
+    // https://docs.mapbox.com/mapbox-gl-js/example/fitbounds/
+    // [west, south, east, north]
+    // bounds: [-11.0, -31.5, 64.0, 35.0],
+    bounds: [-50.0, -41.5, 95.0, 45.0],
 
-  showDesktopSettings: true,
-  setShowDesktopSettings: (showDesktopSettings) => set({ showDesktopSettings }),
+    timePeriod: 'historical',
+    ...appState('percentile', 'historical'),
 
-  showMobileSettings: false,
-  setShowMobileSettings: (showMobileSettings) => set({ showMobileSettings }),
+    setTimePeriod: (timePeriod) =>
+      set((s) => ({
+        timePeriod,
+        ...appState(s.variable, timePeriod),
+      })),
 
-  showAbout: false,
-  setShowAbout: (showAbout) => set({ showAbout }),
+    setVariable: (variable) =>
+      set((s) =>
+        TIME_PERIOD_BANDS[s.timePeriod].includes(variable)
+          ? { ...appState(variable, s.timePeriod) }
+          : {}
+      ),
 
-  showMenu: false,
-  setShowMenu: (showMenu) => set({ showMenu }),
+    confidenceArray: ['5', '20', '50', '80', '95'],
+    confidence: '50',
+    setConfidence: (confidence) => set({ confidence }),
+    confidenceIndex: 2,
+    setConfidenceIndex: (confidenceIndex) => set({ confidenceIndex }),
 
-  showOverlays: false,
-  setShowOverlays: (showOverlays) => set({ showOverlays }),
+    // handle dates
+    ...createHistoricalDates(),
+    setHistoricalDate: (historicalDate) => set({ historicalDate }),
+    setHistoricalSliderIndex: (historicalSliderIndex) => set({ historicalSliderIndex }),
 
-  // colorbar labels and units
-  defaultLabels: { percentile: 'Percentile', total: 'Monthly total', bias: 'Relative bias' },
-  defaultUnits: { percentile: '(%)', total: '(mm)', bias: '(%)' },
-}));
+    // this is for the first forecast slider, 'initialization' date
+    ...createForecastDates(),
+    setForecastMonth: (forecastMonth) => set({ forecastMonth }),
+    // setForecastDate: (forecastDate) => set({ forecastDate }),
+    setForecastDate: (forecastDate) =>
+      set({ forecastDate, leadDates: generateLeadDates(forecastDate) }),
+    setForecastSliderIndex: (forecastSliderIndex) => set({ forecastSliderIndex }),
+
+    // this is for the secondary forecast slider, 'target' date
+    leadArray: [1, 2, 3, 4, 5, 6],
+    lead: 1,
+    setLead: (lead) => set({ lead }),
+    leadIndex: 1,
+    setLeadIndex: (leadIndex) => set({ leadIndex }),
+
+    // time: INITIAL_FORECAST_DATE,
+    time: MAX_HISTORICAL_DATE,
+    setTime: (time) => set({ time }),
+
+    // used for historical date and forecast initialization date slider
+    sliding: false,
+    setSliding: (sliding) => set({ sliding }),
+
+    // used only for lead time slider
+    slidingLead: false,
+    setSlidingLead: (slidingLead) => set({ slidingLead }),
+
+    setHistoricalSliderIndex: (index) => {
+      const { sliding, historicalDates } = get();
+      const idx = Number(index);
+      set({
+        historicalSliderIndex: idx,
+        ...(!sliding ? { time: historicalDates.at(idx) } : {}),
+      });
+    },
+
+    setForecastSliderIndex: (index) => {
+      const { sliding, forecastDates } = get();
+      const idx = Number(index);
+      set({
+        forecastSliderIndex: idx,
+        ...(!sliding ? { forecastDate: forecastDates.at(idx) } : {}),
+      });
+    },
+
+    showTimeError: false,
+    setShowTimeError: (showTimeError) => set({ showTimeError }),
+
+    historicalRaster: null,
+    setHistoricalRaster: (layer) => set({ historicalRaster: layer }),
+
+    forecastRaster: null,
+    setForecastRaster: (layer) => set({ forecastRaster: layer }),
+
+    differenceRaster: null,
+    setDifferenceRaster: (layer) => set({ differenceRaster: layer }),
+
+    showCharts: false,
+    setShowCharts: (showCharts) => set({ showCharts }),
+
+    filterCoordinates: [],
+    setFilterCoordinates: (filterCoordinates) => set({ filterCoordinates }),
+
+    coords: [15.7, 2.6],
+    setCoords: (coords) => set({ coords }),
+
+    plotData: {},
+    setPlotData: (plotData) => set({ plotData, queryStatus: 'success' }),
+    setQueryStatus: (status) => set({ queryStatus: status }),
+
+    gintoUri: null,
+    setGintoUri: (gintoUri) => set({ gintoUri }),
+
+    gemeliUri: null,
+    setGemeliUri: (gemeliUri) => set({ gemeliUri }),
+
+    showLandLayer: true,
+    setShowLandLayer: (showLandLayer) => set({ showLandLayer }),
+
+    showCountriesLayer: true,
+    setShowCountriesLayer: (showCountriesLayer) => set({ showCountriesLayer }),
+
+    showStatesLayer: false,
+    setShowStatesLayer: (showStatesLayer) => set({ showStatesLayer }),
+
+    showLakesLayer: true,
+    setShowLakesLayer: (showLakesLayer) => set({ showLakesLayer }),
+
+    showDesktopSettings: true,
+    setShowDesktopSettings: (showDesktopSettings) => set({ showDesktopSettings }),
+
+    showMobileSettings: false,
+    setShowMobileSettings: (showMobileSettings) => set({ showMobileSettings }),
+
+    showAbout: false,
+    setShowAbout: (showAbout) => set({ showAbout }),
+
+    showMenu: false,
+    setShowMenu: (showMenu) => set({ showMenu }),
+
+    showOverlays: false,
+    setShowOverlays: (showOverlays) => set({ showOverlays }),
+  };
+});

@@ -11,9 +11,11 @@ export default function Settings() {
 
   // shared variables
   const setVariable = useStore((state) => state.setVariable);
-  const variableIdx = useStore((state) => state.variableIdx);
+  const variableIdx = useStore((state) => state.variableIndex);
   const sliding = useStore((state) => state.sliding);
   const setSliding = useStore((state) => state.setSliding);
+  const slidingLead = useStore((state) => state.slidingLead);
+  const setSlidingLead = useStore((state) => state.setSlidingLead);
   const validMonths = useStore((state) => state.validMonths);
   const validYears = useStore((state) => state.validYears);
   const timePeriod = useStore((state) => state.timePeriod);
@@ -39,8 +41,8 @@ export default function Settings() {
   const leadDates = useStore((state) => state.leadDates);
   // const confidenceArray = useStore((state) => state.confidenceArray);
   // const setConfidence = useStore((state) => state.setConfidence);
-  // const confidenceIdx = useStore((state) => state.confidenceIdx);
-  // const setConfidenceIdx = useStore((state) => state.setConfidenceIdx);
+  // const confidenceIdx = useStore((state) => state.confidenceIndex);
+  // const setConfidenceIdx = useStore((state) => state.setConfidenceIndex);
 
   // time slider
   const sliderDates = timePeriod == 'historical' ? historicalDates : forecastDates;
@@ -184,8 +186,8 @@ export default function Settings() {
   }, [forecastSliderIndex, sliding]);
 
   useEffect(() => {
-    if (!sliding) setLead(leadIndex);
-  }, [leadIndex, sliding]);
+    if (!slidingLead) setLead(leadIndex);
+  }, [leadIndex, slidingLead]);
 
   const handleVariableChange = useCallback(
     (event) => {
@@ -353,8 +355,23 @@ export default function Settings() {
               sx={sx['time-slider']}
               value={sliderIndex}
               onChange={(e) => setSliderIndex(e.target.value)}
+              // mouse
               onMouseDown={() => setSliding(true)}
               onMouseUp={() => setSliding(false)}
+              // touch
+              onTouchStart={() => setSliding(true)}
+              onTouchEnd={() => setSliding(false)}
+              // arrow keys
+              onKeyDown={(e) => {
+                if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                  setSliding(true);
+                }
+              }}
+              onKeyUp={(e) => {
+                if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                  setSliding(false);
+                }
+              }}
               onPointerUp={() => setSliding(false)}
               min={0}
               max={maxSliderIndex}
@@ -392,9 +409,24 @@ export default function Settings() {
                 sx={sx['time-slider']}
                 value={leadIndex}
                 onChange={(e) => setLeadIndex(Number(e.target.value))}
-                onMouseDown={() => setSliding(true)}
-                onMouseUp={() => setSliding(false)}
-                onPointerUp={() => setSliding(false)}
+                // mouse
+                onMouseDown={() => setSlidingLead(true)}
+                onMouseUp={() => setSlidingLead(false)}
+                onPointerUp={() => setSlidingLead(false)}
+                // touch
+                onTouchStart={() => setSlidingLead(true)}
+                onTouchEnd={() => setSlidingLead(false)}
+                // arrow keys
+                onKeyDown={(e) => {
+                  if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                    setSlidingLead(true);
+                  }
+                }}
+                onKeyUp={(e) => {
+                  if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                    setSlidingLead(false);
+                  }
+                }}
                 min={1}
                 max={leadArray.length}
                 step={1}

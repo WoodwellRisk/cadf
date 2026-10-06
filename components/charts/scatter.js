@@ -4,56 +4,40 @@ import { useRef, useMemo } from 'react';
 import { Box } from 'theme-ui';
 import * as d3 from 'd3';
 
-import { getDifferenceInMonths, useStore } from '../store/index';
+import { arrayRange, useStore } from '../store/index';
 
-function getXTicks(minDate, maxDate) {
-  const difference = getDifferenceInMonths(minDate, maxDate) - 1;
-  const numYears = (difference - 1) / 12;
-  let dateFormatter = null;
-
-  if (numYears <= 1) {
-    // show ticks every month for <= 1 year of data
-    dateFormatter = d3.timeMonth;
-  } else if (difference <= 24) {
-    // show ticks at quarterly intervals for 1–2 years of data
-    dateFormatter = d3.timeMonth.every(3);
-  } else {
-    // show ticks for every january for 2+ years of data
-    dateFormatter = d3.timeYear;
-  }
-
-  return dateFormatter.range(new Date(minDate), new Date(maxDate));
-}
-
-export default function Timeseries() {
+export default function Scatter() {
   const containerRef = useRef(null);
 
   const variable = useStore((state) => state.variable);
-  const historicalDates = useStore((state) => state.historicalDates);
-  // these dates could also be derived from plotData, which might be better when filtering data
-  const minDate = historicalDates.at(0);
-  const maxDate = historicalDates.at(-1);
-  const historicalSliderIndex = useStore((state) => state.historicalSliderIndex);
-  const date = historicalDates.at(historicalSliderIndex);
-  const sliding = useStore((state) => state.sliding);
+  const leadArray = useStore((state) => state.leadArray);
+  const leadIndex = useStore((state) => state.leadIndex);
+  const leadDates = useStore((state) => state.leadDates);
+  const sliding = useStore((state) => state.slidingLead);
+  const colormap = useStore((state) => state.colormap);
   const clim = useStore((state) => state.clim);
   const plotData = useStore((state) => state.plotData);
   const gintoUri = useStore((state) => state.gintoUri);
   const fontCSS = `@font-face {
-                      font-family: 'ginto-normal';
-                      src: url('${gintoUri}') format('truetype');
-                  }`;
+                        font-family: 'ginto-normal';
+                        src: url('${gintoUri}') format('truetype');
+                    }`;
 
   const [min, max] = clim;
+  const range = max - min;
+  const nBins = 11;
+  const binWidth = range / nBins;
+  let thresholds = arrayRange(min + binWidth, max + binWidth, binWidth);
+  const colorScale = d3.scaleThreshold().domain(thresholds).range(colormap);
 
   // chart layout
-  const width = 310;
+  const width = 330;
   const height = 270;
-  const inset = 10;
+  const inset = 10; // used for pushing the x and y axes ticks inward
   const tickSize = 5;
 
   const marginLeft = 55;
-  const marginRight = 20;
+  const marginRight = 30;
   const marginTop = 15;
   const marginBottom = 55;
 
@@ -63,20 +47,29 @@ export default function Timeseries() {
   const y1 = height - marginBottom - inset;
 
   // x axis
-  const xTicks = getXTicks(minDate, maxDate);
-  const xDomain = [new Date(minDate), new Date(maxDate)];
-  const xScale = d3.scaleTime().domain(xDomain).range([x0, x1]);
+  let datesJS = leadDates.map((t) => {
+    let [year, month, day] = t.split('-');
+    return new Date(year, parseInt(month) - 1, day);
+  });
+  const formatDate = d3.timeFormat('%m-%y');
+  const formattedDates = datesJS.map(formatDate);
+
+  const xTicks = [1, 2, 3, 4, 5, 6];
+  const xTickLabels = formattedDates.slice(0, 6);
+  const xDomain = [xTicks.at(0), xTicks.at(-1)];
+
+  const xScale = d3.scaleLinear().domain(xDomain).range([x0, x1]);
 
   // y axis
-  const yTicks =
-    variable === 'percentile' ? d3.range(min, max + 25, 25) : d3.range(min, max + 50, 50);
+  // const yTicks = d3.ticks(min, max, 7)
+  const yTicks = d3.range(min, max + 25, 25);
   const yScale = d3.scaleLinear().domain([min, max]).range([y1, y0]);
-  const yAxisLabel = variable === 'percentile' ? 'Percentile' : 'Precipitation (mm)';
+  const yAxisLabel = 'Relative bias (%)';
 
   const lineGenerator = d3
     .line()
     .defined((d) => !isNaN(d[1])) // skip missing / gap points
-    .x((d) => xScale(new Date(d[0])))
+    .x((d) => xScale(d[0]))
     .y((d) => yScale(d[1]))
     .curve(d3.curveMonotoneX);
 
@@ -86,62 +79,53 @@ export default function Timeseries() {
   const chartData = useMemo(() => {
     if (!hasData) return null;
 
-    // convert data from {date: [value]} to {[date, value]} format,
+    // convert data from {lead: [value]} to {[lead, value]} format,
     // which many d3 methods expect.
-    const timeseriesArray = historicalDates
-      .filter((d) => plotData?.[variable][d])
-      .map((d) => [new Date(d), plotData?.[variable][d][0]]);
+    const timeseriesArray = leadArray
+      .filter((d) => plotData?.[variable]?.[d])
+      .map((d) => [d, plotData?.[variable]?.[d][0]]);
 
-    // the formatted data that we are going to use for the plot
-    // differs for each variable
-    let data;
+    let line = (
+      <path
+        key={'line-path'}
+        id="line-path"
+        d={lineGenerator(timeseriesArray)}
+        fill="none"
+        stroke={'rgba(27, 30, 35, 0.3)'}
+        strokeWidth={1.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    );
 
-    if (variable === 'percentile') {
-      // compute bar width from the closest pair of adjacent bars
-      const positions = timeseriesArray.map(([date]) => xScale(new Date(date)));
-      const minDelta = positions.length > 1 ? d3.min(d3.pairs(positions, (a, b) => b - a)) : 5;
-      const barWidth = minDelta * 1.0; // thin bars
+    let points = timeseriesArray.map(([lead, value]) => {
+      let boundedValue = value > max ? max : value < min ? min : value;
 
-      data = timeseriesArray.map(([date, value]) => {
-        const x = xScale(new Date(date));
-        const y0 = yScale(50);
-        const y1 = yScale(value);
+      const cx = xScale(lead);
+      const cy = yScale(boundedValue);
+      const r = 5;
+      const color = colorScale(boundedValue);
 
-        return (
-          <rect
-            key={`bar-${date}`}
-            x={x - barWidth / 2} // center on the date
-            y={Math.min(y0, y1)} // top of the bar
-            width={barWidth}
-            height={Math.abs(y0 - y1)}
-            fill={value >= 50 ? '#64bac5' : '#ef7071'}
-            stroke="none"
-          />
-        );
-      });
-    } else if (variable === 'total') {
-      data = (
-        <path
-          key={'line-path'}
-          id="line-path"
-          d={lineGenerator(timeseriesArray)}
-          fill="none"
-          stroke="black"
-          strokeWidth={1.5}
-          strokeLinecap="round"
-          strokeLinejoin="round"
+      return (
+        <circle
+          key={`circle-${lead}`}
+          cx={cx}
+          cy={cy}
+          r={r}
+          fill={color}
+          stroke={'#1b1e23'}
+          strokeWidth={0.5}
         />
       );
-    } else {
-      data = null;
-    }
+    });
 
     return (
-      <g key={'timeseries-data-container'} id="timeseries-data-container">
-        {data}
+      <g key={'scatter-data-container'} id="scatter-data-container">
+        {line}
+        {points}
       </g>
     );
-  }, [hasData, plotData, variable]);
+  }, [hasData, plotData]);
 
   return (
     <Box
@@ -154,7 +138,7 @@ export default function Timeseries() {
       }}
     >
       {/* this is the container svg */}
-      <svg id={'timeseries-chart'} width={'100%'} height={'100%'}>
+      <svg id={'scatter-chart'} width={'100%'} height={'100%'}>
         {gintoUri && <style type="text/css">{fontCSS}</style>}
 
         {/* this ensures that the svg or png has a white background */}
@@ -173,31 +157,28 @@ export default function Timeseries() {
           />
 
           {/* x-axis tick labels */}
-          {xTicks.map((date, idx) => (
+          {xTicks.map((value, idx) => (
             <g key={`x-tick-${idx}`} className={'x-axis-tick'}>
               <line
                 key={`x-tick-line-${idx}`}
-                x1={xScale(date)}
+                x1={xScale(value)}
                 y1={0}
-                x2={xScale(date)}
+                x2={xScale(value)}
                 y2={tickSize}
                 stroke={'currentColor'}
                 fill={'none'}
               />
               <text
                 key={`x-tick-label-${idx}`}
-                x={xScale(date)}
+                x={xScale(value)}
                 y={tickSize + 12}
+                // transform={`rotate(-45, ${-tickSize}, ${(tickSize + 12)})`}
+                // textAnchor={'end'}
                 textAnchor={'middle'}
                 fontSize={'0.625rem'}
                 fontFamily={'ginto-normal'}
               >
-                {/* Jan 2023 */}
-                {/* {d3.timeFormat('%b %Y')(date)}  */}
-                {/* 01-23 */}
-                {/* {d3.timeFormat('%m-%y')(date)} */}
-                {/* Jan 23 */}
-                {d3.timeFormat('%b %y')(date)}
+                {xTickLabels[idx]}
               </text>
             </g>
           ))}
@@ -211,7 +192,7 @@ export default function Timeseries() {
               fontSize={'0.75rem'}
               fontFamily={'ginto-normal'}
             >
-              {'Time'}
+              {'Lead date'}
             </text>
           </g>
         </g>
@@ -241,7 +222,7 @@ export default function Timeseries() {
               />
               <text
                 key={`y-tick-label-${idx}`}
-                x={-15}
+                x={-tickSize - 12}
                 y={yScale(value)}
                 dy={'0.05em'}
                 textAnchor={'middle'}
@@ -274,10 +255,10 @@ export default function Timeseries() {
         <g id="date-value-tracker">
           <line
             //add line tracking time slider date
-            key={'historical-date-line'}
-            id={'historical-date-line'}
-            x1={xScale(new Date(date))}
-            x2={xScale(new Date(date))}
+            key={'lead-date-line'}
+            id={'lead-date-line'}
+            x1={xScale(leadIndex)}
+            x2={xScale(leadIndex)}
             y1={y0 - inset}
             y2={y1 + inset}
             stroke={'#808080'}
@@ -288,14 +269,14 @@ export default function Timeseries() {
             style={{ transition: 'opacity .15s' }}
           />
 
-          {plotData && plotData[variable] && plotData[variable][date] && (
+          {plotData && plotData[variable] && plotData[variable][leadIndex] && (
             <circle
               // add circle tracking value at time slider date
-              key={`historical-date-circle`}
-              id={`historical-date-circle`}
-              cx={xScale(new Date(date))}
-              cy={yScale(plotData?.[variable]?.[date][0])}
-              r={4}
+              key={`lead-date-circle`}
+              id={`lead-date-circle`}
+              cx={xScale(leadIndex)}
+              cy={yScale(plotData[variable][leadIndex][0])}
+              r={5}
               stroke={'#1b1e23'}
               strokeWidth={0.5}
               opacity={sliding ? 1 : 0}

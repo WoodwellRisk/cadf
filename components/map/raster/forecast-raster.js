@@ -3,7 +3,7 @@ import { ZarrLayer } from '@carbonplan/zarr-layer';
 import { useMap } from '../map-provider';
 import { useShallow } from 'zustand/react/shallow';
 
-import { useStore } from '../../store/index';
+import { TIME_PERIOD_BANDS, safeValue, useStore } from '../../store/index';
 
 // This component expects input data in the format:
 // Dimensions: {'band': 2, 'stat': 6, 'time': ..., 'lead': 6, 'y': ..., 'x': ...}
@@ -24,9 +24,10 @@ const ForecastRaster = ({ id, opacity, setRaster }) => {
   const queryLayerRef = useRef(null);
   const { map } = useMap();
 
-  const variable = useStore((state) => state.variable);
-  const clim = useStore(useShallow((state) => state.clim()));
-  const colormap = useStore(useShallow((state) => state.colormap()));
+  const bandArray = TIME_PERIOD_BANDS['historical'];
+  const variable = useStore((state) => safeValue(bandArray, state.variable));
+  const clim = useStore(useShallow((state) => state.clim));
+  const colormap = useStore(useShallow((state) => state.colormap));
   const time = useStore((state) => state.time);
   const lead = useStore((state) => state.lead);
   const source = `https://storage.googleapis.com/cadf/zarr/forecast.zarr`;
