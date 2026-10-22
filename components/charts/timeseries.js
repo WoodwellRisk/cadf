@@ -4,6 +4,7 @@ import { useRef, useMemo } from 'react';
 import { Box } from 'theme-ui';
 import * as d3 from 'd3';
 
+import { clamp } from './utils';
 import { getDifferenceInMonths, useStore } from '../store/index';
 
 function getXTicks(minDate, maxDate) {
@@ -37,14 +38,13 @@ export default function Timeseries() {
   const date = historicalDates.at(historicalSliderIndex);
   const sliding = useStore((state) => state.sliding);
   const clim = useStore((state) => state.clim);
+  const [min, max] = clim;
   const plotData = useStore((state) => state.plotData);
   const gintoUri = useStore((state) => state.gintoUri);
   const fontCSS = `@font-face {
                       font-family: 'ginto-normal';
                       src: url('${gintoUri}') format('truetype');
                   }`;
-
-  const [min, max] = clim;
 
   // chart layout
   const width = 310;
@@ -90,7 +90,8 @@ export default function Timeseries() {
     // which many d3 methods expect.
     const timeseriesArray = historicalDates
       .filter((d) => plotData?.[variable][d])
-      .map((d) => [new Date(d), plotData?.[variable][d][0]]);
+      .map((d) => [new Date(d), plotData?.[variable][d][0]])
+      .map(([d, v]) => [d, clamp(v, min, max)]);
 
     // the formatted data that we are going to use for the plot
     // differs for each variable
@@ -249,7 +250,7 @@ export default function Timeseries() {
                 fontSize={'0.625rem'}
                 fontFamily={'ginto-normal'}
               >
-                {value}
+                {variable === 'total' && value === max ? `\u2265${value}` : value}
               </text>
             </g>
           ))}
@@ -294,7 +295,7 @@ export default function Timeseries() {
               key={`historical-date-circle`}
               id={`historical-date-circle`}
               cx={xScale(new Date(date))}
-              cy={yScale(plotData?.[variable]?.[date][0])}
+              cy={yScale(clamp(plotData?.[variable]?.[date][0], min, max))}
               r={4}
               stroke={'#1b1e23'}
               strokeWidth={0.5}

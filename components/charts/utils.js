@@ -9,3 +9,7 @@ export async function fontToDataUri(fontPath) {
 
   return `data:font/ttf;charset=utf-8;base64,${base64}`;
 }
+
+// provide min / max bounds to number
+// export const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+export const clamp = (value, min, max) => (value > max ? max : value < min ? min : value);

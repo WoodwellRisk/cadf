@@ -196,102 +196,61 @@ export default function PointQuery({ key, id }) {
 
     setQueryStatus('loading');
 
-    if (timePeriod == 'forecast') {
-      forecastRaster
-        .queryData(
-          { type: 'Point', coordinates: coords },
-          {
-            band: variableArray,
-            stat: confidenceArray,
-            time: forecastDate,
-            lead: leadArray,
-          }
-        )
-        .then((result) => {
-          if (!signal.aborted) {
-            let formatted = formatForecastResult(result.query, leadDates);
-            setPlotData(formatted);
-          }
-        })
-        .catch((error) => {
-          if (error.name !== 'AbortError') {
-            setQueryStatus('error');
-            console.error('Error querying forecast raster:', error);
-          }
-        });
-    } else if (timePeriod == 'historical') {
-      historicalRaster
-        .queryData(
-          { type: 'Point', coordinates: coords },
-          {
-            band: variableArray,
-            time: historicalDates,
-          }
-        )
-        .then((result) => {
-          if (!signal.aborted) {
-            setPlotData(result.query);
-          }
-        })
-        .catch((error) => {
-          if (error.name !== 'AbortError') {
-            setQueryStatus('error');
-            console.error('Error querying historical raster:', error);
-          }
-        });
+    let selector;
+    let raster;
+
+    if (timePeriod === 'forecast') {
+      raster = forecastRaster;
+      selector = {
+        band: variableArray,
+        stat: confidenceArray,
+        time: forecastDate,
+        lead: leadArray,
+      };
+    } else if (timePeriod === 'historical') {
+      raster = historicalRaster;
+      selector = {
+        band: variableArray,
+        time: historicalDates,
+      };
     } else {
-      differenceRaster
-        .queryData(
-          { type: 'Point', coordinates: coords },
-          {
-            band: 'bias',
-            time: forecastDate,
-            lead: leadArray,
-          }
-        )
+      // timePeriod === 'difference'
+      raster = differenceRaster;
+      selector = {
+        // band: 'bias',
+        time: forecastDate,
+        lead: leadArray,
+      };
+    }
+
+    const rasterQuery = raster.ready.then(() => {
+      if (signal.aborted) return;
+      setQueryStatus('loading');
+
+      return raster
+        .queryData({ type: 'Point', coordinates: coords }, selector, { signal })
         .then((result) => {
-          if (!signal.aborted) {
-            // since there is only a single band in the difference raster,
-            // we need to wrap the data in the variable name so that our
-            // checks in the chart component correctly knows when to plot data
+          if (timePeriod == 'historical') {
+            setPlotData(result.query);
+          } else if (timePeriod == 'forecast') {
+            setPlotData(formatForecastResult(result.query, leadDates));
+          } else {
             setPlotData({ bias: { ...result.query } });
           }
         })
         .catch((error) => {
           if (error.name !== 'AbortError') {
             setQueryStatus('error');
-            console.error('Error querying difference raster:', error);
+            console.error(`Error querying ${timePeriod} raster:`, error);
           }
         });
-    }
+    });
 
     return () => {
-      abortController.abort(); // cancel pending request on cleanup
+      // cancel pending request on cleanup
+      abortController.abort();
     };
   }, [timePeriod, coords, forecastDate]);
-
-  // const historicalRaster = useStore((state) => state.historicalRaster);
-  // const forecastRaster = useStore((state) => state.forecastRaster);
-
-  // const fetchCountrySeries = useCallback(async () => {
-  //   if (!historicalRaster || !forecastRaster) return;
-
-  //   try {
-  //     setQueryStatus('loading');
-
-  //     // both requests in flight simultaneously — each fetches its own chunks
-  //     const [historicalResult, forecastResult] = await Promise.all([
-  //       historicalRaster.queryData(selector),
-  //       forecastRaster.queryData(selector),
-  //     ]);
-
-  //     setQueryStatus('success');
-  //     // combine for the chart — e.g., concatenated time axis
-  //     setChartData({ historical: historicalResult, forecast: forecastResult });
-  //   } catch (error) {
-  //     setQueryStatus('error');
-  //   }
-  // }, [historicalRaster, forecastRaster,]);
 
   return (
     <Box

@@ -4,6 +4,7 @@ import { useRef, useMemo } from 'react';
 import { Box } from 'theme-ui';
 import * as d3 from 'd3';
 
+import { clamp } from './utils';
 import { arrayRange, useStore } from '../store/index';
 
 export default function Scatter() {
@@ -83,7 +84,8 @@ export default function Scatter() {
     // which many d3 methods expect.
     const timeseriesArray = leadArray
       .filter((d) => plotData?.[variable]?.[d])
-      .map((d) => [d, plotData?.[variable]?.[d][0]]);
+      .map((d) => [d, plotData?.[variable]?.[d][0]])
+      .map(([d, v]) => [d, clamp(v, min, max)]);
 
     let line = (
       <path
@@ -99,12 +101,10 @@ export default function Scatter() {
     );
 
     let points = timeseriesArray.map(([lead, value]) => {
-      let boundedValue = value > max ? max : value < min ? min : value;
-
       const cx = xScale(lead);
-      const cy = yScale(boundedValue);
+      const cy = yScale(value);
       const r = 5;
-      const color = colorScale(boundedValue);
+      const color = colorScale(value);
 
       return (
         <circle
@@ -230,7 +230,7 @@ export default function Scatter() {
                 fontSize={'0.625rem'}
                 fontFamily={'ginto-normal'}
               >
-                {value}
+                {value === min ? `\u2264${value}` : value === max ? `\u2265${value}` : value}
               </text>
             </g>
           ))}
@@ -275,7 +275,7 @@ export default function Scatter() {
               key={`lead-date-circle`}
               id={`lead-date-circle`}
               cx={xScale(leadIndex)}
-              cy={yScale(plotData[variable][leadIndex][0])}
+              cy={yScale(clamp(plotData[variable][leadIndex][0], min, max))}
               r={5}
               stroke={'#1b1e23'}
               strokeWidth={0.5}

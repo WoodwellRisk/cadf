@@ -4,6 +4,7 @@ import { useRef, useMemo } from 'react';
 import { Box } from 'theme-ui';
 import * as d3 from 'd3';
 
+import { clamp } from './utils';
 import { arrayRange, useStore } from '../store/index';
 
 export default function Dot() {
@@ -93,7 +94,7 @@ export default function Dot() {
       let formattedDate = `${month}-${year}`;
       let values = confidenceArray.map((confidence) => {
         let val = plotData?.[variable]?.[confidence]?.[date]?.[0];
-        return val > max ? max : val < min ? min : val;
+        return clamp(val, min, max);
       });
 
       return {
@@ -244,7 +245,7 @@ export default function Dot() {
                   fontFamily: 'ginto-normal',
                 }}
               >
-                {value}
+                {variable === 'total' && value === max ? `\u2265${value}` : value}
               </text>
             </g>
           ))}

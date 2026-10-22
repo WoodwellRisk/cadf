@@ -13,6 +13,7 @@ export const pyramidShader = `
     // this will need to change based on a uniform value for the variable
     float dataVal = ${variable};
     // float dataVal = u_var;
+    // float dataVal = (int(u_var) == 0) ? percentile : total;
 
     // handle NaN / fill values 
     if (isnan(dataVal)) {
