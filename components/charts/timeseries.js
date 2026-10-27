@@ -91,7 +91,8 @@ export default function Timeseries() {
     const timeseriesArray = historicalDates
       .filter((d) => plotData?.[variable][d])
       .map((d) => [new Date(d), plotData?.[variable][d][0]])
-      .map(([d, v]) => [d, clamp(v, min, max)]);
+      .map(([d, v]) => [d, clamp(v, min, max)])
+      .filter(([, v]) => !Number.isNaN(v));
 
     // the formatted data that we are going to use for the plot
     // differs for each variable
@@ -289,7 +290,7 @@ export default function Timeseries() {
             style={{ transition: 'opacity .15s' }}
           />
 
-          {plotData && plotData[variable] && plotData[variable][date] && (
+          {plotData && plotData?.[variable]?.[date] && !isNaN(plotData?.[variable]?.[date]) && (
             <circle
               // add circle tracking value at time slider date
               key={`historical-date-circle`}

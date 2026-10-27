@@ -12,6 +12,8 @@ export default function Dot() {
 
   const variable = useStore((state) => state.variable);
   const leadDates = useStore((state) => state.leadDates);
+  const leadIndex = useStore((state) => state.leadIndex);
+  const sliding = useStore((state) => state.slidingLead);
   const confidenceArray = useStore((state) => state.confidenceArray);
   const confidence = useStore((state) => state.confidence);
   const colormap = useStore((state) => state.colormap);
@@ -31,12 +33,12 @@ export default function Dot() {
   const colorScale = d3.scaleThreshold().domain(thresholds).range(colormap);
 
   // chart layout
-  const width = 310;
+  const width = 320;
   const height = 270;
-  const inset = 10; // used for pushing the x and y axes ticks inward
+  const inset = 20; // used for pushing the x and y axes ticks inward
   const tickSize = 5;
 
-  const marginLeft = 45;
+  const marginLeft = 65;
   const marginRight = 5;
   const marginTop = 0;
   const marginBottom = 55;
@@ -50,7 +52,7 @@ export default function Dot() {
   const xTicks =
     variable === 'percentile' ? d3.range(min, max + 25, 25) : d3.range(min, max + 50, 50);
   const xScale = d3.scaleLinear().domain([min, max]).range([x0, x1]); // leave space for y‑axis labels
-  const xAxisLabel = variable == 'percentile' ? 'Percentile' : 'Precipitation (mm)';
+  const xAxisLabel = variable === 'percentile' ? 'Percentile' : 'Precipitation (mm)';
 
   // y axis
   let datesJS = leadDates.map((t) => {
@@ -64,8 +66,16 @@ export default function Dot() {
   // the dates in the correct order
   const yTicks = [5, 4, 3, 2, 1, 0];
   // const yTicks = [0, 1, 2, 3, 4, 5]
-  const yTickLabels = formattedDates.slice(0, 6);
+  const yTickLabels = formattedDates; //.slice(0, 6);
   const yScale = d3.scalePoint().domain(yTicks).range([y1, y0]).padding(0.3);
+  const yAxisLabel = 'Target date';
+
+  // compute values for rectangle that highlights lead date time step
+  const rectangleHorizontalStart = xScale(min) - 5;
+  const rectangleWidth = xScale(max) - xScale(min) + 10;
+  const rectangleHeight = yScale.step();
+  const rectangleVerticalCenter = yScale(leadIndex - 1) - rectangleHeight / 2;
+  const highlightTimestep = leadIndex >= 1 && leadIndex <= yTicks.length;
 
   const hasData = Boolean(variable && plotData?.[variable]?.[confidence] && leadDates.length > 0);
 
@@ -92,15 +102,20 @@ export default function Dot() {
     const flatData = leadDates.map((date, idx) => {
       let [year, month, day] = date.split('-');
       let formattedDate = `${month}-${year}`;
+
       let values = confidenceArray.map((confidence) => {
         let val = plotData?.[variable]?.[confidence]?.[date]?.[0];
         return clamp(val, min, max);
       });
 
+      // skip plotting this date entirely if all values are NaN across confidence levels
+      const allInvalid = values.every((v) => v === null || Number.isNaN(v));
+
       return {
         date: formattedDate,
         dateIndex: idx,
         x: values,
+        isValid: !allInvalid,
       };
     });
 
@@ -117,59 +132,64 @@ export default function Dot() {
     // 8: Object { date: "11-2025", x: ..., confidence: 80 }
     // 9: Object { date: "11-2025", x: ..., confidence: 95 }
     const tidyPoints = [];
-    Object.values(flatData).forEach((row, dateIdx) => {
+    flatData.forEach((row) => {
+      if (!row.isValid) return;
       row.x.forEach((val, idx) => {
-        if (val == null) return;
+        if (val === null || Number.isNaN(val)) return;
         tidyPoints.push({
           date: row.date,
-          dateIndex: dateIdx,
+          dateIndex: row.dateIndex,
           x: val,
           confidence: confidenceArray[idx],
         });
       });
     });
 
-    {
-      /* horizontal lines */
-    }
-    let lines = flatData.map((d, idx) => {
-      const x1 = xScale(d3.min(d.x));
-      const x2 = xScale(d3.max(d.x));
-      const y = yScale(d.dateIndex);
+    /* horizontal lines */
+    let lines = flatData
+      .filter((d) => d.isValid)
+      .map((d, idx) => {
+        const x1 = xScale(d3.min(d.x));
+        const x2 = xScale(d3.max(d.x));
+        const y = yScale(d.dateIndex);
+        const lineColor = 'rgba(27, 30, 35, 0.3)';
+        const lineWidth = 2;
 
-      return (
-        <g key={`line-${idx}`} className={'y-axis-lines'}>
-          <line
-            key={`line-${idx}`}
-            className={'hline'}
-            x1={x1}
-            x2={x2}
-            y1={y}
-            y2={y}
-            // stroke={alpha('muted', 0.3)}
-            stroke={'rgba(27, 30, 35, 0.3)'}
-            strokeWidth={2}
-            strokeLinecap={'round'}
-          />
-        </g>
-      );
-    });
+        return (
+          <g key={`line-${idx}`} className={'y-axis-lines'}>
+            <line
+              key={`line-${idx}`}
+              className={'hline'}
+              x1={x1}
+              x2={x2}
+              y1={y}
+              y2={y}
+              // stroke={alpha('muted', 0.3)}
+              stroke={lineColor}
+              strokeWidth={lineWidth}
+              strokeLinecap={'round'}
+            />
+          </g>
+        );
+      });
 
     let points = tidyPoints.map((d, idx) => {
       const cx = xScale(d.x);
       const cy = yScale(d.dateIndex);
       const r = 4;
       const size = r + 2;
-      const color = colorScale(d.x);
+      const fillColor = colorScale(d.x);
+      const borderWidth = 0.5;
+      const borderColor = '#1b1e23';
 
-      if (d.confidence == 50) {
+      if (d.confidence === '50' || d.confidence === 50) {
         return (
           <polygon
             key={`diamond-${idx}`}
             points={`${cx},${cy - size} ${cx + size},${cy} ${cx},${cy + size} ${cx - size},${cy}`}
-            fill={color}
-            stroke={'#1b1e23'}
-            strokeWidth={0.5}
+            fill={fillColor}
+            stroke={borderColor}
+            strokeWidth={borderWidth}
           />
         );
       } else {
@@ -179,9 +199,9 @@ export default function Dot() {
             cx={cx}
             cy={cy}
             r={r}
-            fill={color}
-            stroke={'#1b1e23'}
-            strokeWidth={0.5}
+            fill={fillColor}
+            stroke={borderColor}
+            strokeWidth={borderWidth}
           />
         );
       }
@@ -193,7 +213,7 @@ export default function Dot() {
         {points}
       </g>
     );
-  }, [hasData, plotData, variable]);
+  }, [hasData, plotData, variable, min, max]);
 
   return (
     <Box
@@ -284,7 +304,37 @@ export default function Dot() {
               </g>
             );
           })}
+
+          <g id={'y-axis-label'}>
+            <text
+              key={`y-label`}
+              x={-tickSize - 32}
+              y={(y0 + y1) / 2}
+              transform={`rotate(-90, ${-tickSize - 32}, ${(y0 + y1) / 2})`}
+              textAnchor={'middle'}
+              dy={-13}
+              fontSize={'0.75rem'}
+              fontFamily={'ginto-normal'}
+            >
+              {yAxisLabel}
+            </text>
+          </g>
         </g>
+
+        {highlightTimestep && (
+          <g id="lead-date-highlight">
+            <rect
+              key={`lead-date-rectangle-${leadIndex}`}
+              x={rectangleHorizontalStart}
+              width={rectangleWidth}
+              y={rectangleVerticalCenter}
+              height={rectangleHeight}
+              fill={'rgba(27, 30, 35, 0.08)'}
+              opacity={sliding ? 1 : 0}
+              style={{ transition: 'opacity .15s' }}
+            />
+          </g>
+        )}
 
         {/* points representing values at confidence levels for each lead date */}
         {chartData}

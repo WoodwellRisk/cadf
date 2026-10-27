@@ -199,7 +199,13 @@ export default function PointQuery({ key, id }) {
     let selector;
     let raster;
 
-    if (timePeriod === 'forecast') {
+    if (timePeriod === 'historical') {
+      raster = historicalRaster;
+      selector = {
+        band: variableArray,
+        time: historicalDates,
+      };
+    } else if (timePeriod === 'forecast') {
       raster = forecastRaster;
       selector = {
         band: variableArray,
@@ -207,17 +213,10 @@ export default function PointQuery({ key, id }) {
         time: forecastDate,
         lead: leadArray,
       };
-    } else if (timePeriod === 'historical') {
-      raster = historicalRaster;
-      selector = {
-        band: variableArray,
-        time: historicalDates,
-      };
     } else {
       // timePeriod === 'difference'
       raster = differenceRaster;
       selector = {
-        // band: 'bias',
         time: forecastDate,
         lead: leadArray,
       };

@@ -67,12 +67,12 @@ export default function Scatter() {
   const yScale = d3.scaleLinear().domain([min, max]).range([y1, y0]);
   const yAxisLabel = 'Relative bias (%)';
 
-  const lineGenerator = d3
-    .line()
-    .defined((d) => !isNaN(d[1])) // skip missing / gap points
-    .x((d) => xScale(d[0]))
-    .y((d) => yScale(d[1]))
-    .curve(d3.curveMonotoneX);
+  // const lineGenerator = d3
+  //   .line()
+  //   .defined((d) => !isNaN(d[1])) // skip missing / gap points
+  //   .x((d) => xScale(d[0]))
+  //   .y((d) => yScale(d[1]))
+  //   .curve(d3.curveMonotoneX);
 
   const hasData = Boolean(variable && plotData?.[variable]);
 
@@ -80,25 +80,28 @@ export default function Scatter() {
   const chartData = useMemo(() => {
     if (!hasData) return null;
 
+    console.log(plotData);
+
     // convert data from {lead: [value]} to {[lead, value]} format,
     // which many d3 methods expect.
     const timeseriesArray = leadArray
       .filter((d) => plotData?.[variable]?.[d])
       .map((d) => [d, plotData?.[variable]?.[d][0]])
-      .map(([d, v]) => [d, clamp(v, min, max)]);
+      .map(([d, v]) => [d, clamp(v, min, max)])
+      .filter(([, v]) => !Number.isNaN(v));
 
-    let line = (
-      <path
-        key={'line-path'}
-        id="line-path"
-        d={lineGenerator(timeseriesArray)}
-        fill="none"
-        stroke={'rgba(27, 30, 35, 0.3)'}
-        strokeWidth={1.5}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    );
+    // let line = (
+    //   <path
+    //     key={'line-path'}
+    //     id="line-path"
+    //     d={lineGenerator(timeseriesArray)}
+    //     fill="none"
+    //     stroke={'rgba(27, 30, 35, 0.3)'}
+    //     strokeWidth={1.5}
+    //     strokeLinecap="round"
+    //     strokeLinejoin="round"
+    //   />
+    // );
 
     let points = timeseriesArray.map(([lead, value]) => {
       const cx = xScale(lead);
@@ -121,7 +124,7 @@ export default function Scatter() {
 
     return (
       <g key={'scatter-data-container'} id="scatter-data-container">
-        {line}
+        {/* {line} */}
         {points}
       </g>
     );
@@ -192,7 +195,7 @@ export default function Scatter() {
               fontSize={'0.75rem'}
               fontFamily={'ginto-normal'}
             >
-              {'Lead date'}
+              {'Target date'}
             </text>
           </g>
         </g>
@@ -269,20 +272,22 @@ export default function Scatter() {
             style={{ transition: 'opacity .15s' }}
           />
 
-          {plotData && plotData[variable] && plotData[variable][leadIndex] && (
-            <circle
-              // add circle tracking value at time slider date
-              key={`lead-date-circle`}
-              id={`lead-date-circle`}
-              cx={xScale(leadIndex)}
-              cy={yScale(clamp(plotData[variable][leadIndex][0], min, max))}
-              r={5}
-              stroke={'#1b1e23'}
-              strokeWidth={0.5}
-              opacity={sliding ? 1 : 0}
-              style={{ transition: 'opacity .15s' }}
-            />
-          )}
+          {plotData &&
+            plotData?.[variable]?.[leadIndex] &&
+            !isNaN(plotData?.[variable]?.[leadIndex]) && (
+              <circle
+                // add circle tracking value at time slider date
+                key={`lead-date-circle`}
+                id={`lead-date-circle`}
+                cx={xScale(leadIndex)}
+                cy={yScale(clamp(plotData[variable][leadIndex][0], min, max))}
+                r={5}
+                stroke={'#1b1e23'}
+                strokeWidth={0.5}
+                opacity={sliding ? 1 : 0}
+                style={{ transition: 'opacity .15s' }}
+              />
+            )}
         </g>
       </svg>
     </Box>
