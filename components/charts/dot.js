@@ -11,9 +11,9 @@ export default function Dot() {
   const containerRef = useRef(null);
 
   const variable = useStore((state) => state.variable);
-  const leadDates = useStore((state) => state.leadDates);
+  const leadDates = useStore((state) => state.forecastLeadDates);
   const leadIndex = useStore((state) => state.leadIndex);
-  const sliding = useStore((state) => state.slidingLead);
+  const sliding = useStore((state) => state.leadSliding);
   const confidenceArray = useStore((state) => state.confidenceArray);
   const confidence = useStore((state) => state.confidence);
   const colormap = useStore((state) => state.colormap);
@@ -82,6 +82,8 @@ export default function Dot() {
   // function that (re)draws the chart whenever the container size changes.
   const chartData = useMemo(() => {
     if (!containerRef.current || !hasData) return null;
+
+    console.log(plotData);
 
     // format data
     // the data for plotting each line or row on the dot chart
@@ -213,7 +215,7 @@ export default function Dot() {
         {points}
       </g>
     );
-  }, [hasData, plotData, variable, min, max]);
+  }, [hasData, plotData, min, max]);
 
   return (
     <Box
@@ -321,6 +323,7 @@ export default function Dot() {
           </g>
         </g>
 
+        {/* box that highlights timestep behind chart data */}
         {highlightTimestep && (
           <g id="lead-date-highlight">
             <rect

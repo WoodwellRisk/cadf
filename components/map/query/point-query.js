@@ -14,17 +14,18 @@ export default function PointQuery({ key, id }) {
   const sourceIdRef = useRef();
   const layerIdRef = useRef();
 
-  const differenceRaster = useStore((state) => state.differenceRaster);
+  const biasRaster = useStore((state) => state.biasRaster);
   const forecastRaster = useStore((state) => state.forecastRaster);
   const historicalRaster = useStore((state) => state.historicalRaster);
 
   const variableArray = useStore((state) => state.variableArray);
   const confidenceArray = useStore((state) => state.confidenceArray);
   const timePeriod = useStore((state) => state.timePeriod);
-  const forecastDate = useStore((state) => state.forecastDate);
-  const leadArray = useStore((state) => state.leadArray);
-  const leadDates = useStore((state) => state.leadDates);
   const historicalDates = useStore((state) => state.historicalDates);
+  const forecastDate = useStore((state) => state.forecastDate);
+  const biasDate = useStore((state) => state.biasDate);
+  const leadArray = useStore((state) => state.leadArray);
+  const forecastLeadDates = useStore((state) => state.forecastLeadDates);
 
   const coords = useStore((state) => state.coords);
   const setCoords = useStore((state) => state.setCoords);
@@ -214,10 +215,9 @@ export default function PointQuery({ key, id }) {
         lead: leadArray,
       };
     } else {
-      // timePeriod === 'difference'
-      raster = differenceRaster;
+      raster = biasRaster;
       selector = {
-        time: forecastDate,
+        time: biasDate,
         lead: leadArray,
       };
     }
@@ -232,7 +232,7 @@ export default function PointQuery({ key, id }) {
           if (timePeriod == 'historical') {
             setPlotData(result.query);
           } else if (timePeriod == 'forecast') {
-            setPlotData(formatForecastResult(result.query, leadDates));
+            setPlotData(formatForecastResult(result.query, forecastLeadDates));
           } else {
             setPlotData({ bias: { ...result.query } });
           }
@@ -249,7 +249,7 @@ export default function PointQuery({ key, id }) {
       // cancel pending request on cleanup
       abortController.abort();
     };
-  }, [timePeriod, coords, forecastDate]);
+  }, [timePeriod, coords, forecastDate, forecastLeadDates, biasDate]);
 
   return (
     <Box

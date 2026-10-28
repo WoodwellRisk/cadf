@@ -25,7 +25,7 @@ const HistoricalRaster = ({ id, opacity, setRaster }) => {
   const variable = useStore((state) => safeValue(bandArray, state.variable));
   const clim = useStore((state) => state.clim);
   const colormap = useStore((state) => state.colormap);
-  const time = useStore((state) => state.time);
+  const time = useStore((state) => state.historicalDate);
   const source = `https://storage.googleapis.com/cadf/zarr/historical.zarr`;
 
   useEffect(() => {

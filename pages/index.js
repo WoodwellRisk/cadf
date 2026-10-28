@@ -62,7 +62,7 @@ export default function Index() {
               <ChartContainer>
                 {timePeriod == 'historical' && <Timeseries />}
                 {timePeriod == 'forecast' && <Dot />}
-                {timePeriod == 'difference' && <Scatter />}
+                {timePeriod == 'bias' && <Scatter />}
               </ChartContainer>
 
               {plotData && Object.keys(plotData).length > 0 && <DownloadChartButton />}

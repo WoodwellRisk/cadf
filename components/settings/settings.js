@@ -14,22 +14,26 @@ export default function Settings() {
   const variableIdx = useStore((state) => state.variableIndex);
   const sliding = useStore((state) => state.sliding);
   const setSliding = useStore((state) => state.setSliding);
-  const slidingLead = useStore((state) => state.slidingLead);
-  const setSlidingLead = useStore((state) => state.setSlidingLead);
-  const validMonths = useStore((state) => state.validMonths);
-  const validYears = useStore((state) => state.validYears);
+  const leadSliding = useStore((state) => state.leadSliding);
+  const setLeadSliding = useStore((state) => state.setLeadSliding);
+  const validHistoricalMonths = useStore((state) => state.validHistoricalMonths);
+  const validHistoricalYears = useStore((state) => state.validHistoricalYears);
   const timePeriod = useStore((state) => state.timePeriod);
-  const setTime = useStore((state) => state.setTime);
 
   // historical
   const maxHistoricalDate = useStore((state) => state.maxHistoricalDate);
   const historicalDates = useStore((state) => state.historicalDates);
   const historicalSliderIndex = useStore((state) => state.historicalSliderIndex);
   const setHistoricalSliderIndex = useStore((state) => state.setHistoricalSliderIndex);
+  const setHistoricalDate = useStore((state) => state.setHistoricalDate);
   const showTimeError = useStore((state) => state.showTimeError);
   const setShowTimeError = useStore((state) => state.setShowTimeError);
 
-  // forecast
+  // forecast and bias
+  // const confidenceArray = useStore((state) => state.confidenceArray);
+  // const setConfidence = useStore((state) => state.setConfidence);
+  // const confidenceIdx = useStore((state) => state.confidenceIndex);
+  // const setConfidenceIdx = useStore((state) => state.setConfidenceIndex);
   const setForecastDate = useStore((state) => state.setForecastDate);
   const forecastDates = useStore((state) => state.forecastDates);
   const forecastSliderIndex = useStore((state) => state.forecastSliderIndex);
@@ -38,17 +42,34 @@ export default function Settings() {
   const setLead = useStore((state) => state.setLead);
   const leadIndex = useStore((state) => state.leadIndex);
   const setLeadIndex = useStore((state) => state.setLeadIndex);
-  const leadDates = useStore((state) => state.leadDates);
-  // const confidenceArray = useStore((state) => state.confidenceArray);
-  // const setConfidence = useStore((state) => state.setConfidence);
-  // const confidenceIdx = useStore((state) => state.confidenceIndex);
-  // const setConfidenceIdx = useStore((state) => state.setConfidenceIndex);
+  const leadDates = useStore((state) =>
+    timePeriod === 'forecast' ? state.forecastLeadDates : state.biasLeadDates
+  );
+  const setBiasDate = useStore((state) => state.setBiasDate);
+  const biasDates = useStore((state) => state.biasDates);
+  const biasSliderIndex = useStore((state) => state.biasSliderIndex);
+  const setBiasSliderIndex = useStore((state) => state.setBiasSliderIndex);
 
   // time slider
-  const sliderDates = timePeriod == 'historical' ? historicalDates : forecastDates;
-  const sliderIndex = timePeriod == 'historical' ? historicalSliderIndex : forecastSliderIndex;
+  const sliderDates =
+    timePeriod === 'historical'
+      ? historicalDates
+      : timePeriod === 'forecast'
+        ? forecastDates
+        : biasDates;
+  const sliderIndex =
+    timePeriod === 'historical'
+      ? historicalSliderIndex
+      : timePeriod === 'forecast'
+        ? forecastSliderIndex
+        : biasSliderIndex;
   const setSliderIndex =
-    timePeriod == 'historical' ? setHistoricalSliderIndex : setForecastSliderIndex;
+    timePeriod === 'historical'
+      ? setHistoricalSliderIndex
+      : timePeriod === 'forecast'
+        ? setForecastSliderIndex
+        : setBiasSliderIndex;
+
   const maxSliderIndex = sliderDates.length - 1;
   const minSliderYear = Number(sliderDates.at(0).split('-')[0]);
   const maxSliderYear = Number(sliderDates.at(-1).split('-')[0]);
@@ -62,7 +83,7 @@ export default function Settings() {
       width: '100%',
       py: isWide ? 2 : 1,
       px: 3,
-      // mb: timePeriod == 'historical' ? 2 : 4,
+      // mb: timePeriod === 'historical' ? 2 : 4,
       mb: 2,
     },
     title: {
@@ -97,7 +118,7 @@ export default function Settings() {
         cursor: 'pointer',
       },
     },
-    'difference-container': {
+    'bias-container': {
       gridTemplateColumns: 'repeat(1, 1fr)',
       '&:hover > .var-selection': {
         cursor: 'pointer',
@@ -170,33 +191,35 @@ export default function Settings() {
     },
   };
 
+  // every time the forecast or bias 'init date' position changes, we want
+  // to reset the lead time or 'target date' back to the starting position
   useEffect(() => {
-    if (timePeriod == 'historical') {
-      if (!sliding) setTime(historicalDates.at(sliderIndex));
-    } else {
-      if (!sliding) setTime(forecastDates.at(sliderIndex));
+    if (!sliding) {
+      if (timePeriod === 'historical') {
+        setHistoricalDate(historicalDates.at(sliderIndex));
+      } else if (timePeriod === 'forecast') {
+        setForecastDate(forecastDates.at(sliderIndex));
+        setLeadIndex(1);
+      } else {
+        // timePeriod === 'bias'
+        setBiasDate(biasDates.at(sliderIndex));
+        setLeadIndex(1);
+      }
     }
-  }, [sliderIndex, sliding]);
-
-  // every time the forecast 'init date' position changes,
-  // we want to reset the lead time or 'target date' back to the starting position
-  useEffect(() => {
-    setLeadIndex(1);
-    if (!sliding) setForecastDate(forecastDates.at(forecastSliderIndex));
-  }, [forecastSliderIndex, sliding]);
+  }, [timePeriod, sliderIndex, sliding]);
 
   useEffect(() => {
-    if (!slidingLead) setLead(leadIndex);
-  }, [leadIndex, slidingLead]);
+    if (!leadSliding && timePeriod !== 'historical') setLead(leadIndex);
+  }, [leadIndex, leadSliding]);
 
   const handleVariableChange = useCallback(
     (event) => {
       const variable =
-        event.target.innerHTML == 'Percentiles'
+        event.target.innerHTML === 'Percentiles'
           ? 'percentile'
-          : event.target.innerHTML == 'Monthly totals'
+          : event.target.innerHTML === 'Monthly totals'
             ? 'total'
-            : event.target.innerHTML == 'Relative bias'
+            : event.target.innerHTML === 'Relative bias'
               ? 'bias'
               : null;
       if (variable != null) setVariable(variable); // store validates + syncs variableIdx
@@ -224,15 +247,15 @@ export default function Settings() {
         role="button"
         className="var-selection"
         onClick={handleVariableChange}
-        sx={{ ...sx['button'], bg: idx == variableIdx ? alpha('muted', 0.5) : 'background' }}
+        sx={{ ...sx['button'], bg: idx === variableIdx ? alpha('muted', 0.5) : 'background' }}
       >
         {label}
       </Box>
     );
   });
 
-  let differenceLabel = ['Relative bias'];
-  let differenceOptions = differenceLabel.map((label, idx) => {
+  let biasLabel = ['Relative bias'];
+  let biasOptions = biasLabel.map((label, idx) => {
     return (
       <Box
         as="div"
@@ -241,7 +264,7 @@ export default function Settings() {
         role="button"
         className="var-selection"
         onClick={handleVariableChange}
-        sx={{ ...sx['button'], bg: idx == variableIdx ? alpha('muted', 0.5) : 'background' }}
+        sx={{ ...sx['button'], bg: idx === variableIdx ? alpha('muted', 0.5) : 'background' }}
       >
         {label}
       </Box>
@@ -258,7 +281,7 @@ export default function Settings() {
   //       role="button"
   //       className="confidence-selection"
   //       onClick={handleConfidenceChange}
-  //       sx={{ ...sx['button'], bg: idx == confidenceIdx ? alpha('muted', 0.5) : 'background' }}
+  //       sx={{ ...sx['button'], bg: idx === confidenceIdx ? alpha('muted', 0.5) : 'background' }}
   //     >
   //       {label}
   //     </Box>
@@ -270,7 +293,7 @@ export default function Settings() {
     if (tempSliderIndex != -1) {
       setShowTimeError(false);
       setHistoricalSliderIndex(tempSliderIndex);
-      setTime(historicalDates.at(tempSliderIndex));
+      setHistoricalDate(historicalDates.at(tempSliderIndex));
     } else {
       setShowTimeError(true);
     }
@@ -307,7 +330,7 @@ export default function Settings() {
             </Info>
           </Box>
 
-          {(timePeriod == 'historical' || timePeriod == 'forecast') && (
+          {(timePeriod === 'historical' || timePeriod === 'forecast') && (
             <Box
               as="div"
               id={'variable-container'}
@@ -317,17 +340,17 @@ export default function Settings() {
             </Box>
           )}
 
-          {timePeriod == 'difference' && (
+          {timePeriod === 'bias' && (
             <Box
               as="div"
-              id={'difference-container'}
-              sx={{ ...sx['options-container'], ...sx['difference-container'] }}
+              id={'bias-container'}
+              sx={{ ...sx['options-container'], ...sx['bias-container'] }}
             >
-              {differenceOptions}
+              {biasOptions}
             </Box>
           )}
 
-          {/* {timePeriod == 'forecast' && (
+          {/* {timePeriod === 'forecast' && (
             <Box id="confidence-layers">
               <Box as="div" sx={sx.title} id="confidence-title">
                 Confidence level <Info>Select a confidence level to view.</Info>
@@ -345,7 +368,7 @@ export default function Settings() {
 
           <Box id="time-slider-container">
             <Box sx={{ ...sx.title, mb: [2] }}>
-              {`${timePeriod == 'historical' ? 'Date' : 'Initialization'}: 
+              {`${timePeriod === 'historical' ? 'Date' : 'Initialization'}: 
                 ${sliderDates.at(sliderIndex)}`}
             </Box>
 
@@ -399,7 +422,7 @@ export default function Settings() {
             </Box>
           </Box>
 
-          {timePeriod != 'historical' && (
+          {timePeriod !== 'historical' && (
             <>
               <Box sx={{ ...sx.title }}>{`Prediction: ${leadDates.at(leadIndex - 1)}`}</Box>
 
@@ -410,21 +433,21 @@ export default function Settings() {
                 value={leadIndex}
                 onChange={(e) => setLeadIndex(Number(e.target.value))}
                 // mouse
-                onMouseDown={() => setSlidingLead(true)}
-                onMouseUp={() => setSlidingLead(false)}
-                onPointerUp={() => setSlidingLead(false)}
+                onMouseDown={() => setLeadSliding(true)}
+                onMouseUp={() => setLeadSliding(false)}
+                onPointerUp={() => setLeadSliding(false)}
                 // touch
-                onTouchStart={() => setSlidingLead(true)}
-                onTouchEnd={() => setSlidingLead(false)}
+                onTouchStart={() => setLeadSliding(true)}
+                onTouchEnd={() => setLeadSliding(false)}
                 // arrow keys
                 onKeyDown={(e) => {
                   if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-                    setSlidingLead(true);
+                    setLeadSliding(true);
                   }
                 }}
                 onKeyUp={(e) => {
                   if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-                    setSlidingLead(false);
+                    setLeadSliding(false);
                   }
                 }}
                 min={1}
@@ -434,7 +457,7 @@ export default function Settings() {
             </>
           )}
 
-          {timePeriod == 'historical' && (
+          {timePeriod === 'historical' && (
             <>
               <Box id={'skip-title-container'} sx={{ ...sx.title, mb: 2 }}>
                 <Text sx={{ fontSize: 1, flexBasis: isWide ? '100%' : 'auto', mb: 1 }}>
@@ -459,7 +482,7 @@ export default function Settings() {
                   defaultValue={defaultSkipMonth}
                   onChange={(e) => setSkipMonth(e.target.value)}
                 >
-                  {validMonths.map((month, idx) => {
+                  {validHistoricalMonths.map((month, idx) => {
                     return (
                       <option key={idx} value={month}>
                         {month}
@@ -475,7 +498,7 @@ export default function Settings() {
                   defaultValue={defaultSkipYear}
                   onChange={(e) => setSkipYear(e.target.value)}
                 >
-                  {validYears.map((year, idx) => {
+                  {validHistoricalYears.map((year, idx) => {
                     return (
                       <option key={idx} value={year}>
                         {year}

@@ -138,7 +138,7 @@ export default function Header() {
         >
           <option value="historical">Historical</option>
           <option value="forecast">Forecast</option>
-          <option value="difference">Error</option>
+          <option value="bias">Error</option>
         </Select>
 
         {isWide && (

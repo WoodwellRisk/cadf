@@ -13,8 +13,8 @@ export default function Scatter() {
   const variable = useStore((state) => state.variable);
   const leadArray = useStore((state) => state.leadArray);
   const leadIndex = useStore((state) => state.leadIndex);
-  const leadDates = useStore((state) => state.leadDates);
-  const sliding = useStore((state) => state.slidingLead);
+  const leadDates = useStore((state) => state.biasLeadDates);
+  const sliding = useStore((state) => state.leadSliding);
   const colormap = useStore((state) => state.colormap);
   const clim = useStore((state) => state.clim);
   const plotData = useStore((state) => state.plotData);
@@ -80,8 +80,6 @@ export default function Scatter() {
   const chartData = useMemo(() => {
     if (!hasData) return null;
 
-    console.log(plotData);
-
     // convert data from {lead: [value]} to {[lead, value]} format,
     // which many d3 methods expect.
     const timeseriesArray = leadArray
@@ -128,7 +126,7 @@ export default function Scatter() {
         {points}
       </g>
     );
-  }, [hasData, plotData]);
+  }, [hasData, plotData, min, max]);
 
   return (
     <Box

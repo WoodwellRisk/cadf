@@ -4,7 +4,7 @@ import MapProvider from './map-provider';
 import Basemap from './basemap';
 import Fill from './fill';
 import Line from './line';
-import { HistoricalRaster, ForecastRaster, DifferenceRaster } from './raster/index';
+import { HistoricalRaster, ForecastRaster, BiasRaster } from './raster/index';
 import { PointQuery } from './query/index';
 import Router from './router';
 import ZoomReset from './zoom-reset';
@@ -18,7 +18,7 @@ export const Map = () => {
   const timePeriod = useStore((state) => state.timePeriod);
   const setHistoricalRaster = useStore((state) => state.setHistoricalRaster);
   const setForecastRaster = useStore((state) => state.setForecastRaster);
-  const setDifferenceRaster = useStore((state) => state.setDifferenceRaster);
+  const setBiasRaster = useStore((state) => state.setBiasRaster);
 
   const showLandLayer = useStore((state) => state.showLandLayer);
   const showLakesLayer = useStore((state) => state.showLakesLayer);
@@ -51,10 +51,10 @@ export const Map = () => {
         setRaster={setForecastRaster}
       />
 
-      <DifferenceRaster
-        id={`difference-raster`}
-        opacity={timePeriod === 'difference' ? 1 : 0}
-        setRaster={setDifferenceRaster}
+      <BiasRaster
+        id={`bias-raster`}
+        opacity={timePeriod === 'bias' ? 1 : 0}
+        setRaster={setBiasRaster}
       />
 
       {showLakesLayer && (

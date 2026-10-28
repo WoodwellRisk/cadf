@@ -34,6 +34,8 @@ export default function Timeseries() {
   // these dates could also be derived from plotData, which might be better when filtering data
   const minDate = historicalDates.at(0);
   const maxDate = historicalDates.at(-1);
+  // we don't want to use historicalDate here, because that is the debounced value
+  // which will not track the time slider in the chart
   const historicalSliderIndex = useStore((state) => state.historicalSliderIndex);
   const date = historicalDates.at(historicalSliderIndex);
   const sliding = useStore((state) => state.sliding);

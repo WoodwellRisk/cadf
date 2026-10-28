@@ -18,16 +18,16 @@ import { useStore } from '../../store/index';
 //     viz     (band, time, lead, y, x)
 //     query   (band, time, lead, y, x)
 
-const DifferenceRaster = ({ id, opacity, setRaster }) => {
+const BiasRaster = ({ id, opacity, setRaster }) => {
   const vizLayerRef = useRef(null);
   const queryLayerRef = useRef(null);
   const { map } = useMap();
 
   const clim = useStore(useShallow((state) => state.clim));
   const colormap = useStore(useShallow((state) => state.colormap));
-  const time = useStore((state) => state.time);
+  const time = useStore((state) => state.biasDate);
   const lead = useStore((state) => state.lead);
-  const source = `https://storage.googleapis.com/cadf/zarr/difference.zarr`;
+  const source = `https://storage.googleapis.com/cadf/zarr/bias.zarr`;
 
   useEffect(() => {
     if (!map) return;
@@ -104,4 +104,4 @@ const DifferenceRaster = ({ id, opacity, setRaster }) => {
   return null;
 };
 
-export default DifferenceRaster;
+export default BiasRaster;

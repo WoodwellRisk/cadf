@@ -10,7 +10,15 @@ import { useStore } from '../store/index';
 export default function DownloadChartButton() {
   const variable = useStore((state) => state.variable);
   const timePeriod = useStore((state) => state.timePeriod);
-  const time = useStore((state) => state.time);
+  const historicalDate = useStore((state) => state.historicalDate);
+  const forecastDate = useStore((state) => state.forecastDate);
+  const biasDate = useStore((state) => state.biasDate);
+  const time =
+    timePeriod === 'historical'
+      ? historicalDate
+      : timePeriod === 'forecast'
+        ? forecastDate
+        : biasDate;
   const coords = useStore((state) => state.coords);
 
   // Modified from: https://observablehq.com/@mbostock/saving-svg
@@ -69,7 +77,7 @@ export default function DownloadChartButton() {
       context.canvas.toBlob(resolve);
       const pngDataUrl = canvas.toDataURL('image/png');
 
-      const timePeriodLabel = timePeriod !== 'difference' ? timePeriod : 'forecast';
+      const timePeriodLabel = timePeriod === 'historical' ? timePeriod : 'forecast';
 
       const variableLabel =
         variable === 'percentile'

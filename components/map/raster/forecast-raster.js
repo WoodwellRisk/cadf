@@ -28,7 +28,7 @@ const ForecastRaster = ({ id, opacity, setRaster }) => {
   const variable = useStore((state) => safeValue(bandArray, state.variable));
   const clim = useStore(useShallow((state) => state.clim));
   const colormap = useStore(useShallow((state) => state.colormap));
-  const time = useStore((state) => state.time);
+  const time = useStore((state) => state.forecastDate);
   const lead = useStore((state) => state.lead);
   const source = `https://storage.googleapis.com/cadf/zarr/forecast.zarr`;
 

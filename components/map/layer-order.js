@@ -35,9 +35,9 @@ const LayerOrder = () => {
     // build the complete target order list from bottom to top
     // map.moveLayer(a, b) will put a below b
     // map.moveLayer('countries-fill', lakesFill.id);
-    map.moveLayer('difference-raster-viz', 'forecast-raster-viz');
+    map.moveLayer('bias-raster-viz', 'forecast-raster-viz');
     map.moveLayer('forecast-raster-viz', 'historical-raster-viz');
-    map.moveLayer('difference-raster-viz', lakesFill.id);
+    map.moveLayer('bias-raster-viz', lakesFill.id);
     map.moveLayer('forecast-raster-viz', lakesFill.id);
     map.moveLayer('historical-raster-viz', lakesFill.id);
     map.moveLayer(lakesFill.id, lakes.id);

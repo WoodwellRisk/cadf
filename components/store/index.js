@@ -4,12 +4,11 @@ import { create } from 'zustand';
 const MIN_HISTORICAL_DATE = '2021-01-01';
 const MAX_HISTORICAL_DATE = '2024-12-01';
 
-// const INITIAL_FORECAST_DATE = '2025-10-01';
-// const MIN_FORECAST_DATE = MIN_HISTORICAL_DATE;
-// const MAX_FORECAST_DATE = MAX_HISTORICAL_DATE;
+const MIN_FORECAST_DATE = MIN_HISTORICAL_DATE;
+const MAX_FORECAST_DATE = MAX_HISTORICAL_DATE;
 
-// const MIN_ERROR_DATE = ...;
-// const MAX_ERROR_DATE = ...;
+const MIN_BIAS_DATE = MIN_HISTORICAL_DATE;
+const MAX_BIAS_DATE = MAX_HISTORICAL_DATE;
 
 export const arrayRange = (start, end, step) => {
   let output = [];
@@ -18,11 +17,6 @@ export const arrayRange = (start, end, step) => {
   }
   return output;
 };
-
-const validMonths = arrayRange(1, 13, 1)
-  .map(String)
-  .map((val) => val.padStart(2, '0'));
-const validYears = arrayRange(1991, 2027, 1).map(String);
 
 const generateDates = (startDate, monthsRange) => {
   const dates = [];
@@ -62,37 +56,40 @@ export const getDifferenceInMonths = (startDateString, endDateString) => {
   );
 };
 
-const createForecastDates = () => {
-  let minDate = MIN_HISTORICAL_DATE;
-  let maxDate = MAX_HISTORICAL_DATE;
+const createDates = (name, minDate, maxDate) => {
   let monthsBetweenDates = getDifferenceInMonths(minDate, maxDate);
   let monthsRange = arrayRange(0, monthsBetweenDates, 1);
-  let forecastDates = generateDates(minDate, monthsRange);
+  let dates = generateDates(minDate, monthsRange);
 
   return {
-    forecastDates: forecastDates,
-    forecastDate: maxDate,
-    forecastSliderIndex: forecastDates.length - 1,
-    leadDates: generateLeadDates(maxDate),
+    [`${name}Dates`]: dates,
+    [`${name}Date`]: maxDate,
+    [`${name}SliderIndex`]: dates.length - 1,
   };
 };
 
-const createHistoricalDates = () => {
-  let minDate = MIN_HISTORICAL_DATE;
-  let maxDate = MAX_HISTORICAL_DATE;
-  let monthsBetweenDates = getDifferenceInMonths(minDate, maxDate);
-  let monthsRange = arrayRange(0, monthsBetweenDates, 1);
-  let historicalDates = generateDates(minDate, monthsRange);
+const createHistoricalDates = () => ({
+  ...createDates('historical', MIN_HISTORICAL_DATE, MAX_HISTORICAL_DATE),
+  maxHistoricalDate: MAX_HISTORICAL_DATE,
+  validHistoricalMonths: arrayRange(1, 13, 1)
+    .map(String)
+    .map((v) => v.padStart(2, '0')),
+  validHistoricalYears: arrayRange(
+    Number(MIN_HISTORICAL_DATE.split('-')[0]),
+    Number(MAX_HISTORICAL_DATE.split('-')[0]) + 1,
+    1
+  ).map(String),
+});
 
-  return {
-    maxHistoricalDate: maxDate,
-    historicalDate: maxDate,
-    historicalDates: historicalDates,
-    historicalSliderIndex: historicalDates.length - 1,
-    validMonths: validMonths,
-    validYears: validYears,
-  };
-};
+const createForecastDates = () => ({
+  ...createDates('forecast', MIN_FORECAST_DATE, MAX_FORECAST_DATE),
+  forecastLeadDates: generateLeadDates(MAX_FORECAST_DATE),
+});
+
+const createBiasDates = () => ({
+  ...createDates('bias', MIN_BIAS_DATE, MAX_BIAS_DATE),
+  biasLeadDates: generateLeadDates(MAX_BIAS_DATE),
+});
 
 const AVAILABLE_COLORMAPS = {
   // this is the 'icefire' palette from seaborn, but reversed
@@ -194,7 +191,7 @@ const COLORBAR_UNITS = {
 export const TIME_PERIOD_BANDS = {
   historical: ['percentile', 'total'],
   forecast: ['percentile', 'total'],
-  difference: ['bias'],
+  bias: ['bias'],
 };
 
 export const safeValue = (array, value) => {
@@ -259,18 +256,28 @@ export const useStore = create((set, get) => {
     confidenceIndex: 2,
     setConfidenceIndex: (confidenceIndex) => set({ confidenceIndex }),
 
+    // used for historical date and forecast / bias initialization date slider
+    sliding: false,
+    setSliding: (sliding) => set({ sliding }),
+
+    // used only for lead time slider
+    leadSliding: false,
+    setLeadSliding: (leadSliding) => set({ leadSliding }),
+
     // handle dates
     ...createHistoricalDates(),
     setHistoricalDate: (historicalDate) => set({ historicalDate }),
     setHistoricalSliderIndex: (historicalSliderIndex) => set({ historicalSliderIndex }),
 
-    // this is for the first forecast slider, 'initialization' date
+    // this is for the first forecast and error raster sliders' 'initialization' date
     ...createForecastDates(),
-    setForecastMonth: (forecastMonth) => set({ forecastMonth }),
-    // setForecastDate: (forecastDate) => set({ forecastDate }),
     setForecastDate: (forecastDate) =>
-      set({ forecastDate, leadDates: generateLeadDates(forecastDate) }),
+      set({ forecastDate, forecastLeadDates: generateLeadDates(forecastDate) }),
     setForecastSliderIndex: (forecastSliderIndex) => set({ forecastSliderIndex }),
+
+    ...createBiasDates(),
+    setBiasDate: (biasDate) => set({ biasDate, biasLeadDates: generateLeadDates(biasDate) }),
+    setBiasSliderIndex: (biasSliderIndex) => set({ biasSliderIndex }),
 
     // this is for the secondary forecast slider, 'target' date
     leadArray: [1, 2, 3, 4, 5, 6],
@@ -278,36 +285,6 @@ export const useStore = create((set, get) => {
     setLead: (lead) => set({ lead }),
     leadIndex: 1,
     setLeadIndex: (leadIndex) => set({ leadIndex }),
-
-    // time: INITIAL_FORECAST_DATE,
-    time: MAX_HISTORICAL_DATE,
-    setTime: (time) => set({ time }),
-
-    // used for historical date and forecast initialization date slider
-    sliding: false,
-    setSliding: (sliding) => set({ sliding }),
-
-    // used only for lead time slider
-    slidingLead: false,
-    setSlidingLead: (slidingLead) => set({ slidingLead }),
-
-    setHistoricalSliderIndex: (index) => {
-      const { sliding, historicalDates } = get();
-      const idx = Number(index);
-      set({
-        historicalSliderIndex: idx,
-        ...(!sliding ? { time: historicalDates.at(idx) } : {}),
-      });
-    },
-
-    setForecastSliderIndex: (index) => {
-      const { sliding, forecastDates } = get();
-      const idx = Number(index);
-      set({
-        forecastSliderIndex: idx,
-        ...(!sliding ? { forecastDate: forecastDates.at(idx) } : {}),
-      });
-    },
 
     showTimeError: false,
     setShowTimeError: (showTimeError) => set({ showTimeError }),
@@ -318,8 +295,8 @@ export const useStore = create((set, get) => {
     forecastRaster: null,
     setForecastRaster: (layer) => set({ forecastRaster: layer }),
 
-    differenceRaster: null,
-    setDifferenceRaster: (layer) => set({ differenceRaster: layer }),
+    biasRaster: null,
+    setBiasRaster: (layer) => set({ biasRaster: layer }),
 
     showCharts: false,
     setShowCharts: (showCharts) => set({ showCharts }),
