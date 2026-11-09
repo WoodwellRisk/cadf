@@ -19,6 +19,7 @@ export default function Settings() {
   const validHistoricalMonths = useStore((state) => state.validHistoricalMonths);
   const validHistoricalYears = useStore((state) => state.validHistoricalYears);
   const timePeriod = useStore((state) => state.timePeriod);
+  const previousTimePeriod = useStore((state) => state.previousTimePeriod);
 
   // historical
   const maxHistoricalDate = useStore((state) => state.maxHistoricalDate);
@@ -137,7 +138,7 @@ export default function Settings() {
     },
     'time-slider-labels-container': {
       textAlign: 'center',
-      pb: timePeriod != 'historical' ? 4 : 2,
+      pb: 4,
     },
     'lead-slider-labels-container': {
       textAlign: 'center',
@@ -191,6 +192,36 @@ export default function Settings() {
     },
   };
 
+  // every time we change time periods, reset to the last valid date
+  // this is only necessary if we want to keep the time variables separate
+  // for each layer so that we can toggle more quickly between them and
+  // reduce data fetches on time period changes. this hook preserves the
+  // initialization date when switching between the forecast and bias layers
+  useEffect(() => {
+    if (timePeriod === 'historical') {
+      setHistoricalSliderIndex(historicalDates.length - 1);
+      setHistoricalDate(historicalDates.at(-1));
+    } else if (timePeriod === 'forecast') {
+      if (previousTimePeriod == 'historical') {
+        setForecastSliderIndex(forecastDates.length - 1);
+        setForecastDate(forecastDates.at(-1));
+        setLeadIndex(1);
+      } else {
+        setForecastSliderIndex(biasSliderIndex);
+        setForecastDate(forecastDates.at(biasSliderIndex));
+      }
+    } else {
+      if (previousTimePeriod == 'historical') {
+        setBiasSliderIndex(biasDates.length - 1);
+        setForecastDate(biasDates.at(-1));
+        setLeadIndex(1);
+      } else {
+        setBiasSliderIndex(forecastSliderIndex);
+        setBiasDate(biasDates.at(forecastSliderIndex));
+      }
+    }
+  }, [timePeriod]);
+
   // every time the forecast or bias 'init date' position changes, we want
   // to reset the lead time or 'target date' back to the starting position
   useEffect(() => {
@@ -199,11 +230,11 @@ export default function Settings() {
         setHistoricalDate(historicalDates.at(sliderIndex));
       } else if (timePeriod === 'forecast') {
         setForecastDate(forecastDates.at(sliderIndex));
-        setLeadIndex(1);
+        // setLeadIndex(1);
       } else {
         // timePeriod === 'bias'
         setBiasDate(biasDates.at(sliderIndex));
-        setLeadIndex(1);
+        // setLeadIndex(1);
       }
     }
   }, [timePeriod, sliderIndex, sliding]);
@@ -457,8 +488,8 @@ export default function Settings() {
             </>
           )}
 
-          {timePeriod === 'historical' && (
-            <>
+          {isWide && timePeriod === 'historical' && (
+            <Box id={'skip-container'}>
               <Box id={'skip-title-container'} sx={{ ...sx.title, mb: 2 }}>
                 <Text sx={{ fontSize: 1, flexBasis: isWide ? '100%' : 'auto', mb: 1 }}>
                   Jump to:
@@ -511,7 +542,7 @@ export default function Settings() {
                   <Text>go</Text>
                 </Button>
               </Box>
-            </>
+            </Box>
           )}
 
           {showTimeError && (

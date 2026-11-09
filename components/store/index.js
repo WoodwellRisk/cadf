@@ -220,7 +220,6 @@ export const useStore = create((set, get) => {
     zoom: 3,
     setZoom: (zoom) => set({ zoom }),
 
-    // minZoom: 1,
     minZoom: 2,
     maxZoom: 7,
 
@@ -231,14 +230,15 @@ export const useStore = create((set, get) => {
 
     // https://docs.mapbox.com/mapbox-gl-js/example/fitbounds/
     // [west, south, east, north]
-    // bounds: [-11.0, -31.5, 64.0, 35.0],
-    bounds: [-50.0, -41.5, 95.0, 45.0],
+    bounds: [-35.0, -41.5, 60.0, 35.0],
 
     timePeriod: 'historical',
+    previousTimePeriod: null,
     ...appState('percentile', 'historical'),
 
     setTimePeriod: (timePeriod) =>
       set((s) => ({
+        previousTimePeriod: s.timePeriod,
         timePeriod,
         ...appState(s.variable, timePeriod),
       })),
